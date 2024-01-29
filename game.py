@@ -17,19 +17,17 @@ class Game():
 
 
 class Display():
+    pg.init()
     BLACK, WHITE = (24, 24, 24), (202, 202, 202)
     width, height = 800, 600
+    ratio = width / 30
 
-    def __init__(self):
-        pg.init()
-        self.display = pg.display.set_mode((self.width, self.height))
-        self.display.fill(self.BLACK)
-        self.caption = pg.display.set_caption("Runner")
-        self.clock = pg.time.Clock()
-        self.font_style = pg.font.SysFont(None, 30)
-        self.font_style_small = pg.font.SysFont(None, 20)
-
-        self.ratio = self.width / 30
+    display = pg.display.set_mode((width, height))
+    display.fill(BLACK)
+    pg.display.set_caption("Runner")
+    clock = pg.time.Clock()
+    font_style = pg.font.SysFont(None, 30)
+    font_style_small = pg.font.SysFont(None, 20)
     
     def update(self, rhythm, geometry):
         self.display.fill(self.BLACK)
