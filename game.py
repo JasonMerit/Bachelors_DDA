@@ -6,13 +6,22 @@ from config import *
 random.seed(SEED)
 np.random.seed(SEED)
 
+class Game():
+    BLACK, WHITE = (24, 24, 24), (202, 202, 202)
+    WIDTH, HEIGHT = 800, 600
+    screen = pg.display.set_mode((WIDTH, HEIGHT))
+    screen.fill(BLACK)
+    pg.display.set_caption("Runner")
+    pg.display.update()
+
+
+
 class Display():
     BLACK, WHITE = (24, 24, 24), (202, 202, 202)
+    width, height = 800, 600
 
     def __init__(self):
         pg.init()
-        self.width = 800
-        self.height = 600
         self.display = pg.display.set_mode((self.width, self.height))
         self.display.fill(self.BLACK)
         self.caption = pg.display.set_caption("Runner")
@@ -20,12 +29,12 @@ class Display():
         self.font_style = pg.font.SysFont(None, 30)
         self.font_style_small = pg.font.SysFont(None, 20)
 
-        self.rhythm_length = self.width * 3 / 5
+        self.ratio = self.width / 30
     
     def update(self, rhythm, geometry):
         self.display.fill(self.BLACK)
         self.draw_rhythm(rhythm)
-        self.draw_geometry(geometry)
+        self.draw_geometry(geometry, rhythm[0])
         pg.display.update()
         # self.clock.tick(60)
 
@@ -42,12 +51,12 @@ class Display():
     
     def draw_rhythm(self, rhythm):
         x, y = self.width / 5, self.height / 5
+        duration, jumps = rhythm
         self.message(f"Rhythm  ", (x, y), self.WHITE, "right")
-        pg.draw.line(self.display, self.WHITE, (x, y), (x + self.rhythm_length, y), 4)
+        pg.draw.line(self.display, self.WHITE, (x, y), (x + duration * self.ratio, y), 4)
 
         # Draw vertical hatches at each jump
-        duration, jumps = rhythm
-        ratio = self.rhythm_length / duration
+        ratio = self.ratio
         for i in range(len(jumps)):
             dx = x + jumps[i][0] * ratio
             self.message(f"{jumps[i][0]} ", (dx, y-20), self.WHITE, small = True)
@@ -58,22 +67,23 @@ class Display():
         self.message(f"Unit ", (x, y), self.WHITE, "right")
         pg.draw.line(self.display, self.WHITE, (x, y), (x + UNIT * ratio, y), 4)
     
-    def draw_geometry(self, geometry):
+    def draw_geometry(self, geometry, duration):
         x0, y = self.width / 5, self.height * 1.4 / 5
         start = x0
-        ratio = self.rhythm_length / 10
 
-        for x, t in geometry:
-            stop = x0 + x * ratio
+        # start and stop of each platform deifnd by jump and hold_down time
+        for x, t in geometry:  
+            stop = x0 + x * self.ratio
             pg.draw.line(self.display, self.WHITE, (start, y), (stop, y), 10)
-            start = stop + t * ratio
-        # pg.draw.line(self.display, self.WHITE, (start, y), (self.width, y), 10)
-        pg.draw.line(self.display, self.WHITE, (start, y), (x0 + self.rhythm_length, y), 10)
-        # print(f'{start = }, {x0 + self.rhythm_length}')
+            start = stop + t * self.ratio
+
+        if start < x0 + duration * self.ratio - 1:
+            pg.draw.line(self.display, self.WHITE, (start, y), (x0 + duration * self.ratio, y), 10)
+
         # Write 'Rhythm' to the left of the line    
         self.message(f"Geometry #{len(geometry)}  ", (x0, y), self.WHITE, "right")
 
-def get_rhythm(density = 4, duration = DURATION, pattern = "regular"):
+def get_rhythm(density = DENSITY, duration = DURATION, pattern = "regular"):
     """Returns a rhythm of hatches. Rhythms are not constrained in any way.
     :param density: Number of hatches
     :param duration: Duration of the rhythm
@@ -85,47 +95,30 @@ def get_rhythm(density = 4, duration = DURATION, pattern = "regular"):
         hatches = [i * x for i in range(1, density + 1)]
 
     elif pattern == "random":    
-        # sample unqiue random numbers from 0 to duration
-        hatches = random.sample(np.arange(0, 10, 0.25).tolist(), 4)
+        hatches = random.sample(np.arange(UNIT, duration, 0.25).tolist(), density)
         # hatches = [random.randint(0, duration / UNIT ) * UNIT for _ in range(density)]
-        print(f'{hatches = }')
 
 
-    # hold_down time UNIT / 0.5 / 0.75
+    # hold_down time multiple of UNIT
     type = (np.random.randint(1, 4, density) * UNIT).tolist() 
     jumps = list(zip(hatches, type))
     jumps.sort()  # Sort by hatch and then type
 
     return duration, jumps
-    # return duration, [hatches, type]
 
 def get_geometry(rhythm : tuple):
     """Convert a rhythm into a geometry of jumps constrained by physics"""
-    duration, jumps = rhythm
+    _, jumps = rhythm
     jumps = jumps.copy()
 
-    # If first too quick, remove it
-    while jumps[0][0] <= UNIT:  
-        jumps.pop(0)
-    
-    # If jump extends to next group, skip it
-    while jumps[-1][0] + jumps[-1][1] >= DURATION - UNIT:  
-        jumps.pop()
-
-    # jump0 = jumps[0]
     geometry = [jumps[0]]
     for jump in jumps[1:]: # If jump to quick after prior, skip it
         if jump[0] - geometry[-1][0] > UNIT + geometry[-1][1]:
-        # if jump[0] - jump0[0] > UNIT + UNIT * jump0[1]:  
             geometry.append((jump))
-        # jump0 = jump
     
     return geometry
 
 def process_events():
-    if display is None:
-        return
-    
     for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
@@ -135,19 +128,25 @@ def process_events():
                     pg.quit()
                     quit()
                 elif event.key == pg.K_RETURN:
-                    action()
+                    return action()
+                    
 
+action_count = 1
 def action():
+    global action_count
+    print(f"\nAction {action_count}")
     res1 = get_rhythm(pattern="random")
     print(f'Rhythm {res1}')
 
     res2 = get_geometry(res1)
     print(f'Geometry    {res2}')
 
-    if display:
-        display.update(res1, res2)
+    
+    action_count += 1
+    return res1, res2
 
 def test():
+    # Determine seed
     global SEED
     for _ in range(PRE_ACTIONS):
         print(f"\nSEED {SEED}")
@@ -156,24 +155,30 @@ def test():
         action()
         SEED += 1
 
-display = Display() if DEBUG else None
-action_count = 1
+
 def main():
-    global action_count
+    display = Display() if not DEBUG else None
+    
     print(f"{SEED=}")
     for _ in range(PRE_ACTIONS):
-        print(f"\nAction {action_count}")
-        action()
-        action_count += 1
-
+        rhythm, geometry = action()
         process_events() 
 
     if display:
         while True:
-            process_events()
-        
+            if res := process_events():
+                display.update(*res)
+
+def play():
+    game = Game()
+    while True:
+        process_events() 
+
 if __name__ == "__main__":
-    if DEBUG:
+    # play()
+    if PLAY:
+        play()
+    elif DEBUG:
         test()
     else:
         main()
