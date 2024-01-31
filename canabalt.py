@@ -3,6 +3,7 @@ from pygame.math import Vector2
 import numpy as np
 import random
 import os
+from math import sqrt
 
 from config import *
 
@@ -38,8 +39,6 @@ class Platform(pg.sprite.Sprite):
             x = (width - msg.get_width()) / 2
             y = (HEIGHT-y - msg.get_height()) / 2
             self.image.blit(msg, (x, y))
-
-            
     
     @staticmethod
     def rest_area(x, y, rest_width, level):
@@ -71,7 +70,7 @@ class Platform(pg.sprite.Sprite):
         return f'Platform({self.left}, {self.right})'
         # return f'Platform({self.rect.left}, {self.rect.top}, {self.rect.width}, {self.rect.height})'
     
-    def update(self, screen : pg.Surface, speed = 10):
+    def update(self, screen : pg.Surface, speed):
         self.rect.move_ip((-speed, 0))
         if self.rect.right <= 0:
             self.rect.left = 800
@@ -84,22 +83,42 @@ class Platform(pg.sprite.Sprite):
 
 class Player(pg.sprite.Sprite):
 
-    gravity = 3.0
+    gravity = 3
     speed = 0.0
     ground_height = 500
     is_floor = False
     
     # jumping
-    jump_speed = 15.0
+    jump_speed = 15
     is_holding = False
-    max_hold_time = 0.3
+    max_hold_frames = 10
     hold_timer = 0.0
-    jump_threshold = 10.0
+    jump_threshold = 10
+
+    # pre computations
+    max_jump_height = jump_speed * max_hold_frames + 0.5 * jump_speed ** 2 / gravity
+    
     
     def __init__(self, x, y, size, color):
         pg.sprite.Sprite.__init__(self)
         self.image = pg.Surface((size, size)).convert_alpha()
         self.image.fill(color)        
+        # add shade to image
+        shade = (0, 0, 0, 100)
+        line_width = size // 8
+
+        # horinzontal
+        shadow = pg.Surface((size, line_width)).convert_alpha()
+        shadow.fill(shade)
+        self.image.blit(shadow, (0, 0))
+        self.image.blit(shadow, (0, size - line_width))
+
+        # Vertical
+        shadow = pg.Surface((line_width, size - 2 * line_width)).convert_alpha()
+        shadow.fill(shade)
+        self.image.blit(shadow, (0, line_width))
+        self.image.blit(shadow, (size - line_width, line_width))
+
         self.rect = self.image.get_rect()
         self.rect.midbottom = (x, y)
     
@@ -127,21 +146,21 @@ class Player(pg.sprite.Sprite):
                 # print(f'{distance = }, {self.speed = }')
                 if self.is_floor or distance - 1.5*self.speed <= self.jump_threshold: 
                     self.is_holding = True
-                    self.hold_timer = 0.0
+                    self.hold_frames = 0.0
                     self.jump()
                 
         elif event.type == pg.KEYUP:
             if event.key == pg.K_SPACE:
                 self.is_holding = False
-    
+    kek = 0
     def update(self):
         # Apply gravity if not on floor
         if not self.is_floor:  
             
             # Holding jump
             if self.is_holding:
-                self.hold_timer += DT
-                if self.hold_timer >= self.max_hold_time:
+                self.hold_frames += 1
+                if self.hold_frames >= self.max_hold_frames:
                     self.is_holding = False
             else:
                 self.speed += self.gravity
@@ -184,8 +203,10 @@ class Game():
     # font_style_big = pg.font.SysFont("verdana", 50)
     font_style_small = pg.font.SysFont(None, 20)
 
+    scroll_speed = 10
     rest_width = 300
-    min_height = HEIGHT - 100
+    min_height, max_height = HEIGHT - 100, 100
+    min_gap = 100
     platform_width = 300
     gap = 100
 
@@ -196,13 +217,13 @@ class Game():
         # Player
         player_x = 100
         self.player = Player(player_x, 450, 20, WHITE)
-        self.player_max_jump_height = self.player.jump_speed * self.player.max_hold_time
+        self.player_max_jump_height = self.player.jump_speed * self.player.max_hold_frames
         self.score = 0
 
         # Platforms
         self.sprites = pg.sprite.Group()
         self.level = 1
-        self.platform = Platform.rest_area(0, 450, self.rest_width, self.level)
+        self.platform = Platform.rest_area(player_x, 450, self.rest_width, self.level)
         self.sprites.add(self.platform)
         self.platforms = [self.platform]
         self.construct_platforms()
@@ -210,24 +231,40 @@ class Game():
 
         self.pause(0.1)
 
-    def get_next_height(self, height):
-        max_height = height - self.player_max_jump_height  # - because y increases downwards
-        max_height = int(min(max_height * 0.7, self.min_height))
-        return random.randrange(max_height, self.min_height, 10)
+    def get_next_position(self, x, y):
+        """
+        :param x, y: top right of previous platform
+        :return: x, y: top left of next platform
+        """
+        print(f'---- {self.level} ----')
+        max_y = max(int(y - 0.7 * self.player.max_jump_height), self.max_height)  # 0.7 grace
+        new_y = random.randrange(int(max_y), self.min_height)
+
+        delta_y = new_y - max_y #
+        vy, g = self.player.jump_speed, self.player.gravity
+
+        t1 = vy / g + self.player.max_hold_frames  # Increasing position time
+        # t2 = sqrt(2 * delta_y / g)  # Decreasing position time
+        t2 = sqrt(2 / g) * sqrt(new_y - max_y)
+        print(f'{t1 = }, {t2 = }')
+        max_x = int((t1 + t2) * self.scroll_speed * 0.7)  # 0.7 grace
+        new_x = x + random.randrange(self.min_gap, max_x)
+
+        return new_x, new_y
     
     def construct_platforms(self):
-        """Returns non-overlapping platforms.
+        """Extends platforms.
         Called when reaching a rest area from tick().
         Each platform is added to the sprite group."""
         # [(1.25, 0.5), (11.5, 0.75), (19.25, 0.75)]
-        y = self.platforms[-1].top
-        for i in range(3):
-            y = self.get_next_height(y)
-            self.platforms.append(Platform(self.platforms[-1].right + self.gap, y, self.platform_width, random_color()))
+      
+        x, y = self.platforms[-1].topright
+        for _ in range(3):
+            x, y = self.get_next_position(*self.platforms[-1].topright)
+            self.platforms.append(Platform(x, y, self.platform_width, random_color()))
         self.platforms.append(Platform.rest_area(*self.platforms[-1].topright, self.rest_width, self.level + 1))
-        
 
-        # Determine overlap
+        # Assert no overlap
         for i in range(len(self.platforms) - 1):
             assert self.platforms[i].right <= self.platforms[i+1].left, f'{self.platforms[i]} overlaps {self.platforms[i+1]}'
         
@@ -235,7 +272,8 @@ class Game():
 
     def platform_transition(self):
         """Check if player has reached new platform and construct new platforms.
-        Mutates self.platform and self.platforms when leaving and reaching new platform."""
+        Mutates self.platform and self.platforms when leaving and reaching new platform.
+        Returns true if died"""
 
         # Leaving current platform
         if self.platform and self.player.right > self.platform.right: 
@@ -248,38 +286,35 @@ class Game():
 
             # Wall collision
             grace = 30
-            if self.player.bottom > platform.top + grace:
+            if not GOD and self.player.bottom > platform.top + grace:
                 self.restart()
-                return
+                return True
             
             # Generate next level upon completing current level
             if platform.is_rest_area:
                 self.construct_platforms()
                 self.level += 1
                 
-                # self.platforms += self.construct_platforms()
-            
             self.platform = self.platforms.pop(0)
 
     def tick(self):
         self.process_events()
-
-        # Drawing player, platforms and score
         self.screen.fill(BLACK)
 
         # Move objects (wait to draw player until after collision check)
         self.player.update()
-        self.sprites.update(self.screen)
+        self.sprites.update(self.screen, self.scroll_speed)
 
         # Check for new platform and wall collision
-        self.platform_transition()
+        if self.platform_transition():
+            return
         
         # Check for floor collision
         if self.platform:
             self.player.floor_collision(self.platform)
         else:
             # Check for off screen
-            if self.player.top > HEIGHT:
+            if not GOD and self.player.top > HEIGHT:
                 self.restart()
                 return
 
@@ -289,6 +324,11 @@ class Game():
         self.score += 1
         msg = self.font_style_big.render(f'{self.score} m', True, GREY)
         self.screen.blit(msg, (WIDTH - msg.get_width() - 20, 20))
+
+        # Draw a line at player's max jump height
+        # if self.platform:
+        #     max_height = self.platform.top - self.player.max_jump_height
+        #     pg.draw.line(self.screen, RED, (0, max_height), (WIDTH, max_height), 1)
         
         pg.display.update()
         self.clock.tick(FPS)
