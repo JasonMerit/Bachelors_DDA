@@ -1,9 +1,11 @@
 SEED = 18759
 PRE_ACTIONS = 25
 WIDTH, HEIGHT = 800, 600
-BLACK, WHITE = (30, 30, 30), (202, 202, 202)
-BLUE, GREY = (90, 95, 116), (179, 178, 194)
-RED, GREEN = (232, 65, 24), (50, 100, 50) 
+# WIDTH = 2000
+# HEIGHT = 1000
+BLACK, WHITE, GREY = (30, 30, 30), (202, 202, 202), (179, 178, 194)
+BLUE, GREEN = (90, 95, 116), (50, 100, 50) 
+RED, YELLOW,  = (232, 65, 24), (255, 255, 0)
 
 DEBUG = 0
 PLAY = 0
@@ -14,4 +16,4 @@ DURATION = 20 # Length of rhythm in seconds (5, 10, 15, 20)
 
 FPS = 40#120#10 # Frames per second (too high, and tapping wlil cross frames)
 DT = 1 / FPS
-GOD = False
+GOD = 0
