@@ -5,7 +5,7 @@ WIDTH, HEIGHT = 800, 600
 # HEIGHT = 1000
 BLACK, WHITE, GREY = (30, 30, 30), (202, 202, 202), (179, 178, 194)
 BLUE, GREEN = (90, 95, 116), (50, 100, 50) 
-RED, YELLOW,  = (232, 65, 24), (255, 255, 0)
+RED, YELLOW,  = (232, 65, 24), (255, 205, 9)
 
 DEBUG = 0
 PLAY = 0
@@ -17,4 +17,5 @@ DURATION = 20 # Length of rhythm in seconds (5, 10, 15, 20)
 FPS = 6 * 10#120#10 # Frames per second (too high, and tapping wlil cross frames)
 # DT = 1 / FPS
 GOD = 1
+AGENT = 1
 FLAT = 0

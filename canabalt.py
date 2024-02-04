@@ -10,19 +10,25 @@ from config import *
 random.seed(SEED)
 np.random.seed(SEED)
 
-def blitRotate(surf, image, topleft, angle):
+def blit_rotate(surf, image, topleft, angle):
     rotated_image = pg.transform.rotate(image, angle)
     new_rect = rotated_image.get_rect(center = image.get_rect(topleft = topleft).center)
     surf.blit(rotated_image, new_rect.topleft)
 
+def lerp_color(color1, color2, t):
+    return [x + (y-x) * t for x, y in zip(Color(color1), Color(color2))]
+
 class Platform(pg.sprite.Sprite):
     
-    def __init__(self, x, y, width, color, image : pg.surface.Surface, rest_area = 0):
+    def __init__(self, x, y, width, color, image : pg.surface.Surface, rest_area = 0, fog = None):
         pg.sprite.Sprite.__init__(self)
         self.is_rest_area = rest_area  # Flag for level completion
         # self.image = pg.Surface((width, HEIGHT-y)).convert_alpha()
         self.image = image.copy()
         self.image.fill(color, special_flags=3)
+        if fog:
+            # self.image.fill(fog, special_flags=3)
+            self.image.set_alpha(20)
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
 
@@ -74,6 +80,22 @@ class Platform(pg.sprite.Sprite):
     def is_colliding(self, player):
         return self.rect.colliderect(player.rect)
 
+class Obstacle(pg.sprite.Sprite):
+    def __init__(self, x, y, image):
+        pg.sprite.Sprite.__init__(self)
+        self.image = image.copy()
+        self.rect = self.image.get_rect()
+        self.rect.midbottom = (x, y)
+    
+    def update(self, screen : pg.Surface, speed):
+        self.rect.move_ip((-speed, 0))
+        if self.rect.right <= 0:
+            self.rect.left = 800
+            self.kill()
+        elif self.rect.left < WIDTH:
+            screen.blit(self.image, self.rect)
+
+
 class Player(pg.sprite.Sprite):
     gravity = 2
     speed = 0
@@ -84,6 +106,7 @@ class Player(pg.sprite.Sprite):
     is_holding = False
     max_hold_frames = 10
     hold_timer = 0
+    hold_frames = 0
     jump_threshold = 10
     angle = 0
     angle_speed = 0
@@ -137,13 +160,11 @@ class Player(pg.sprite.Sprite):
     def process_event(self, event):
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_SPACE and self.is_floor:
-                self.is_holding = True
-                self.hold_frames = 0.0
                 self.jump()
                 
         elif event.type == pg.KEYUP:
             if event.key == pg.K_SPACE:
-                self.is_holding = False
+                self.is_holding = False  # Release jump from keyup
     kek = 0
     def update(self):
         # Apply gravity if not on floor
@@ -152,7 +173,7 @@ class Player(pg.sprite.Sprite):
             if self.is_holding:
                 self.hold_frames += 1
                 if self.hold_frames >= self.max_hold_frames:
-                    self.is_holding = False
+                    self.is_holding = False  # Release jump from expired hold
             else:
                 self.speed += self.gravity
 
@@ -161,14 +182,14 @@ class Player(pg.sprite.Sprite):
 
     
     def draw(self, screen):
-        # Rotate player
         self.angle += self.angle_speed
-        blitRotate(screen, self.image, self.rect.topleft, -self.angle)
-        # screen.blit(self.image, self.rect)
+        blit_rotate(screen, self.image, self.rect.topleft, -self.angle)
     
     def jump(self):
+        """Jump and hold jump if long is True. Written this way to accound for agent's jump."""
+        self.is_holding = True
+        self.hold_frames = 0
         self.speed = -self.jump_speed
-        # self.is_floor = False
         self.fall()
     
     def fall(self):
@@ -190,20 +211,30 @@ class Player(pg.sprite.Sprite):
             self.angle = 0
             self.angle_speed = 0
     
-class Obstacle(pg.sprite.Sprite):
-    def __init__(self, x, y, image):
-        pg.sprite.Sprite.__init__(self)
-        self.image = image.copy()
-        self.rect = self.image.get_rect()
-        self.rect.midbottom = (x, y)
+    def step(self, platform, obstacle):
+        pass # Agent will override this
+
+class Agent(Player):
     
-    def update(self, screen : pg.Surface, speed):
-        self.rect.move_ip((-speed, 0))
-        if self.rect.right <= 0:
-            self.rect.left = 800
-            self.kill()
-        elif self.rect.left < WIDTH:
-            screen.blit(self.image, self.rect)
+    def step(self, platform1 : Platform, platform2 : Platform, obstacle : Obstacle):
+        # if platform1 and not platform2.is_rest_area and self.rect.centerx > platform1.right:            
+        # print(platform1, platform2, self.rect.right, platform1.right, platform2.left, self.rect.right > platform1.right, self.rect.right < platform2.left)
+        if platform1 and not platform2.is_rest_area and self.rect.right > platform1.right:            
+            self.jump(2)
+
+        if obstacle:
+            if obstacle.rect.left < self.rect.right + 20 < obstacle.rect.right:
+                self.jump(0)
+    
+    def jump(self, type):
+        if not self.is_floor:
+            return
+        self.is_holding = True
+        self.hold_frames = [10, 7, 4][type]
+        self.speed = -self.jump_speed
+        self.fall()
+
+
 
 class Game():
     pg.init()
@@ -244,20 +275,31 @@ class Game():
     obstacle_density = 0.2
     size = 30
     obstacle_image = pg.surface.Surface((size, size))
-    obstacle_image.fill(RED)
-    pg.draw.line(obstacle_image, YELLOW, (0, 0), (size, size), 3)
-    pg.draw.line(obstacle_image, YELLOW, (0, size), (size, 0), 3)
+    obstacle_image.fill(YELLOW)
+    
+    # line_width = 5
+    # shade = (0, 0, 0, 200)
+    # shadow = pg.Surface((line_width, size)).convert_alpha()
+    # shadow.fill(shade)
+    # obstacle_image.blit(shadow, (0, 0))
+
+    # platform_image.blit(shadow, (platform_width - line_width, line_width))
+    pg.draw.circle(obstacle_image, BLACK, (size // 2, size * 8 // 10), size // 6)
+    pg.draw.line(obstacle_image, BLACK, (size // 2, size // 7), (size // 2, size * 4 // 7), size // 4)
+    # obstacle_image.fill(BLACK, (0, 0, size, size))
+    # pg.draw.line(obstacle_image, BLACK, (0, 0), (size, size), 3)
+    # pg.draw.line(obstacle_image, BLACK, (0, size), (size, 0), 3)
 
     def __init__(self):
         self.restart()
 
     def restart(self):
         self.score = 0
-        self.level = 1
+        self.level = 0
 
         # Player
         player_x = 100
-        self.player = Player(player_x, 450, 20, WHITE)
+        self.player = Agent(player_x, 450, 20, WHITE) if AGENT else Player(player_x, 450, 20, WHITE)
         self.player_max_jump_height = self.player.jump_speed * self.player.max_hold_frames
 
         # Sprite groups
@@ -266,13 +308,15 @@ class Game():
         self.background_sprites = pg.sprite.Group()
 
         # Platforms
-        self.platform = Platform.rest_area(player_x, 450, self.rest_width, self.platform_image, self.level)
+        # self.platform = Platform.rest_area(player_x, 450, self.rest_width, self.platform_image, self.level)
         self.level += 1
-        self.platform_sprites.add(self.platform)
-        self.platforms = [self.platform]
+        self.platforms = [Platform.rest_area(player_x, 450, self.rest_width, self.platform_image, self.level)]
         self.construct_platforms()
+        self.construct_platforms()
+        self.platform = self.platforms.pop(0)
+        self.platform_sprites.add(self.platform)
 
-        background = [Platform(100 + i*500, HEIGHT // 2, 40, random_color(), self.platform_image) for i in range(10)]
+        background = [Platform(100 + i*500, HEIGHT // 2, 40, random_color(), self.platform_image, fog = BLACK) for i in range(10)]
         self.background_sprites.add(background)
 
 
@@ -346,12 +390,12 @@ class Game():
     base_color = BLACK
     next_color = BLUE
     step = 1
-    max_step = 500
+    max_step = 1000
     def draw_background(self):
         # Draw the sky
         self.step += 1
         if self.step < self.max_step:
-            color = [x + (((y-x)/self.max_step)*self.step) for x, y in zip(Color(self.base_color), Color(self.next_color))]
+            color = lerp_color(self.base_color, self.next_color, self.step / self.max_step)
         else:
             self.step = 1
             self.base_color = BLACK if self.base_color == BLUE else BLUE
@@ -359,14 +403,17 @@ class Game():
             color = self.base_color
         
         self.screen.fill(color)
+        self.background_sprites.update(self.screen, 2)
 
     def tick(self):
         self.process_events()
-        self.screen.fill(BLACK)
-        self.background_sprites.update(self.screen, 2)
-        # self.draw_background()
+        # self.screen.fill(BLACK)
+        self.draw_background()
+        
 
         # Move objects (wait to draw player until after collision check)
+        obstacle = self.obstacle_sprites.sprites()[0] if self.obstacle_sprites else None
+        self.player.step(self.platform, self.platforms[0], obstacle)
         self.player.update()
         self.platform_sprites.update(self.screen, self.scroll_speed)
         self.obstacle_sprites.update(self.screen, self.scroll_speed)
