@@ -1,5 +1,5 @@
 import pygame as pg
-from pygame.math import Vector2
+from pygame.color import Color
 import numpy as np
 import random
 import os
@@ -10,28 +10,21 @@ from config import *
 random.seed(SEED)
 np.random.seed(SEED)
 
+def blitRotate(surf, image, topleft, angle):
+    rotated_image = pg.transform.rotate(image, angle)
+    new_rect = rotated_image.get_rect(center = image.get_rect(topleft = topleft).center)
+    surf.blit(rotated_image, new_rect.topleft)
+
 class Platform(pg.sprite.Sprite):
     
-    def __init__(self, x, y, width, color, rest_area = 0):
+    def __init__(self, x, y, width, color, image : pg.surface.Surface, rest_area = 0):
         pg.sprite.Sprite.__init__(self)
         self.is_rest_area = rest_area  # Flag for level completion
-        
-
-        self.image = pg.Surface((width, HEIGHT-y)).convert_alpha()
-        self.image.fill(color)
+        # self.image = pg.Surface((width, HEIGHT-y)).convert_alpha()
+        self.image = image.copy()
+        self.image.fill(color, special_flags=3)
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
-
-        shade = (0, 0, 0, 100)
-        line_width = 15
-        shadow = pg.Surface((width, line_width)).convert_alpha()
-        shadow.fill(shade)
-        self.image.blit(shadow, (0, 0))
-
-        shadow = pg.Surface((line_width, HEIGHT-y)).convert_alpha()
-        shadow.fill(shade)
-        self.image.blit(shadow, (0, line_width))
-        self.image.blit(shadow, (width - line_width, line_width))
 
         if rest_area:
             font = pg.font.SysFont("rockwell", 50)
@@ -41,8 +34,8 @@ class Platform(pg.sprite.Sprite):
             self.image.blit(msg, (x, y))
     
     @staticmethod
-    def rest_area(x, y, rest_width, level):
-        return Platform(x, y, rest_width, GREEN, rest_area = level)
+    def rest_area(x, y, rest_width, image, level):
+        return Platform(x, y, rest_width, GREEN, image, rest_area = level)
 
     @property
     def top(self):
@@ -82,7 +75,7 @@ class Platform(pg.sprite.Sprite):
         return self.rect.colliderect(player.rect)
 
 class Player(pg.sprite.Sprite):
-    gravity = 3
+    gravity = 2
     speed = 0
     is_floor = False
     
@@ -92,15 +85,18 @@ class Player(pg.sprite.Sprite):
     max_hold_frames = 10
     hold_timer = 0
     jump_threshold = 10
+    angle = 0
+    angle_speed = 0
+    rotations = 2
 
-    # pre computations
+    # pre computations for physics constraints
     max_jump_height = jump_speed * max_hold_frames + 0.5 * jump_speed ** 2 / gravity
     up_time = jump_speed / gravity + max_hold_frames  # Increasing position time
     fly_time = lambda self, delta_y: self.up_time + sqrt(2 * delta_y / self.gravity)
     
-    
-    def __init__(self, x, y, size, color):
+    def __init__(self, x, y, size=20, color=WHITE):
         pg.sprite.Sprite.__init__(self)
+        size = 30
         self.image = pg.Surface((size, size)).convert_alpha()
         self.image.fill(color)        
         # add shade to image
@@ -162,31 +158,42 @@ class Player(pg.sprite.Sprite):
 
             # Move player
             self.rect.move_ip((0, self.speed))  
+
     
     def draw(self, screen):
-        screen.blit(self.image, self.rect)
+        # Rotate player
+        self.angle += self.angle_speed
+        blitRotate(screen, self.image, self.rect.topleft, -self.angle)
+        # screen.blit(self.image, self.rect)
     
     def jump(self):
         self.speed = -self.jump_speed
+        # self.is_floor = False
+        self.fall()
+    
+    def fall(self):
         self.is_floor = False
+        
+        d = self.jump_speed ** 2 + 2 * self.gravity * self.jump_speed * self.max_hold_frames
+        t = (self.jump_speed + sqrt(d)) / self.gravity + self.max_hold_frames
+        omega = self.rotations * 90 / t
+        # d = self.jump_speed ** 2 + 2 * self.gravity * (self.rect.bottom - self.max_jump_height)
+        self.angle_speed = omega
 
-    def floor_collision(self, platform : Platform):
-        height = platform.top
+        # self.angle_speed = 5
+
+    def floor_collision(self, height):
         if self.rect.bottom > height:  
             self.rect.bottom = height
             self.is_floor = True
             self.speed = 0.0
-        elif self.rect.bottom < height:
-            self.is_floor = False
-        # else player is on floor, so do nothing
+            self.angle = 0
+            self.angle_speed = 0
     
 class Obstacle(pg.sprite.Sprite):
-    def __init__(self, x, y, size, color=RED):
+    def __init__(self, x, y, image):
         pg.sprite.Sprite.__init__(self)
-        self.image = pg.Surface((size, size)).convert_alpha()
-        self.image.fill(color)
-        pg.draw.line(self.image, YELLOW, (0, 0), (size, size), 3)
-        pg.draw.line(self.image, YELLOW, (0, size), (size, 0), 3)
+        self.image = image.copy()
         self.rect = self.image.get_rect()
         self.rect.midbottom = (x, y)
     
@@ -212,36 +219,62 @@ class Game():
     # font_style_big = pg.font.SysFont("verdana", 50)
     font_style_small = pg.font.SysFont(None, 20)
 
-    scroll_speed = 10
+    scroll_speed = 5
     rest_width = 300
     min_height, max_height = HEIGHT - 100, 100
-    min_gap = 100
-    platform_width = 300
+    min_gap = 50
+    platform_width = 300 if not FLAT else 100000
+
+    # Platform
+    platform_image = pg.Surface((platform_width, HEIGHT)).convert_alpha()
+    platform_image.fill((255, 255, 255))
+
+    shade = (0, 0, 0, 100)
+    line_width = 15
+    shadow = pg.Surface((platform_width, line_width)).convert_alpha()
+    shadow.fill(shade)
+    platform_image.blit(shadow, (0, 0))
+
+    shadow = pg.Surface((line_width, HEIGHT)).convert_alpha()
+    shadow.fill(shade)
+    platform_image.blit(shadow, (0, line_width))
+    platform_image.blit(shadow, (platform_width - line_width, line_width))
+
+    # Obstacle
     obstacle_density = 0.2
-    obstacle_size = 20
+    size = 30
+    obstacle_image = pg.surface.Surface((size, size))
+    obstacle_image.fill(RED)
+    pg.draw.line(obstacle_image, YELLOW, (0, 0), (size, size), 3)
+    pg.draw.line(obstacle_image, YELLOW, (0, size), (size, 0), 3)
 
     def __init__(self):
         self.restart()
 
     def restart(self):
+        self.score = 0
+        self.level = 1
+
         # Player
         player_x = 100
         self.player = Player(player_x, 450, 20, WHITE)
         self.player_max_jump_height = self.player.jump_speed * self.player.max_hold_frames
-        self.score = 0
 
-        # Obstacles
+        # Sprite groups
+        self.platform_sprites = pg.sprite.Group()
         self.obstacle_sprites = pg.sprite.Group()
+        self.background_sprites = pg.sprite.Group()
 
         # Platforms
-        self.platform_sprites = pg.sprite.Group()
-        self.level = 1
-        self.platform = Platform.rest_area(player_x, 450, self.rest_width, self.level)
+        self.platform = Platform.rest_area(player_x, 450, self.rest_width, self.platform_image, self.level)
+        self.level += 1
         self.platform_sprites.add(self.platform)
         self.platforms = [self.platform]
         self.construct_platforms()
-        self.level += 1
-        
+
+        background = [Platform(100 + i*500, HEIGHT // 2, 40, random_color(), self.platform_image) for i in range(10)]
+        self.background_sprites.add(background)
+
 
         self.pause(0.1)
 
@@ -268,12 +301,14 @@ class Game():
         x, y = self.platforms[-1].topright
         for _ in range(count):
             x, y = self.get_next_position(*self.platforms[-1].topright)
-            self.platforms.append(Platform(x, y, self.platform_width, random_color()))
+            self.platforms.append(Platform(x, y, self.platform_width, random_color(), self.platform_image))
+            # self.platforms.append(Platform(x, y, self.platform_width, random_color()))
 
             # Add obstacle
             if random.random() < self.obstacle_density:
-                self.obstacle_sprites.add(Obstacle(x + self.platform_width // 2, y, self.obstacle_size))
-        self.platforms.append(Platform.rest_area(*self.platforms[-1].topright, self.rest_width, self.level + 1))
+                self.obstacle_sprites.add(Obstacle(x + self.platform_width // 2, y, self.obstacle_image))
+                # self.obstacle_sprites.add(Obstacle(x + self.platform_width // 2, y, self.obstacle_size))
+        self.platforms.append(Platform.rest_area(*self.platforms[-1].topright, self.rest_width, self.platform_image, self.level + 1))
 
         # Assert no overlap
         for i in range(len(self.platforms) - 1):
@@ -287,9 +322,9 @@ class Game():
         Returns true if died"""
 
         # Leaving current platform
-        if self.platform and self.player.right > self.platform.right: 
+        if self.platform and self.player.right - 20 > self.platform.right: 
             self.platform = None
-            self.player.is_floor = False  # Let player fall
+            self.player.fall()  # Let player fall
         
         # Reaching new platform
         if self.platform is None and self.player.right > self.platforms[0].left:
@@ -308,9 +343,28 @@ class Game():
                 
             self.platform = self.platforms.pop(0)
 
+    base_color = BLACK
+    next_color = BLUE
+    step = 1
+    max_step = 500
+    def draw_background(self):
+        # Draw the sky
+        self.step += 1
+        if self.step < self.max_step:
+            color = [x + (((y-x)/self.max_step)*self.step) for x, y in zip(Color(self.base_color), Color(self.next_color))]
+        else:
+            self.step = 1
+            self.base_color = BLACK if self.base_color == BLUE else BLUE
+            self.next_color = BLACK if self.next_color == BLUE else BLUE
+            color = self.base_color
+        
+        self.screen.fill(color)
+
     def tick(self):
         self.process_events()
         self.screen.fill(BLACK)
+        self.background_sprites.update(self.screen, 2)
+        # self.draw_background()
 
         # Move objects (wait to draw player until after collision check)
         self.player.update()
@@ -323,10 +377,10 @@ class Game():
         
         # Check for floor collision
         if self.platform:
-            self.player.floor_collision(self.platform)
+            self.player.floor_collision(self.platform.top)
 
             # Check for obstacle collision
-            if pg.sprite.spritecollide(self.player, self.obstacle_sprites, False):
+            if not GOD and pg.sprite.spritecollide(self.player, self.obstacle_sprites, False):
                 self.restart()
                 return
         else:
