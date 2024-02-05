@@ -72,7 +72,6 @@ class Platform(pg.sprite.Sprite):
     def update(self, screen : pg.Surface, speed):
         self.rect.move_ip((-speed, 0))
         if self.rect.right <= 0:
-            self.rect.left = 800
             self.kill()
         elif self.rect.left < WIDTH:
             screen.blit(self.image, self.rect)
@@ -90,7 +89,6 @@ class Obstacle(pg.sprite.Sprite):
     def update(self, screen : pg.Surface, speed):
         self.rect.move_ip((-speed, 0))
         if self.rect.right <= 0:
-            self.rect.left = 800
             self.kill()
         elif self.rect.left < WIDTH:
             screen.blit(self.image, self.rect)
@@ -177,8 +175,8 @@ class Player(pg.sprite.Sprite):
             else:
                 self.speed += self.gravity
 
-            # Move player
-            self.rect.move_ip((0, self.speed))  
+        # Move player
+        self.rect.move_ip((0, self.speed))  
 
     
     def draw(self, screen):
@@ -211,20 +209,29 @@ class Player(pg.sprite.Sprite):
             self.angle = 0
             self.angle_speed = 0
     
-    def step(self, platform, obstacle):
+    def step(self, platform1 : Platform, platform2 : Platform, obstacle : Obstacle):
         pass # Agent will override this
 
 class Agent(Player):
     
     def step(self, platform1 : Platform, platform2 : Platform, obstacle : Obstacle):
-        # if platform1 and not platform2.is_rest_area and self.rect.centerx > platform1.right:            
-        # print(platform1, platform2, self.rect.right, platform1.right, platform2.left, self.rect.right > platform1.right, self.rect.right < platform2.left)
-        if platform1 and not platform2.is_rest_area and self.rect.right > platform1.right:            
-            self.jump(2)
+        
+        if platform1 and not platform2.is_rest_area:
+            if self.rect.right > platform1.right:
+                # Determine jump type
+                if platform1.top < platform2.top - 100:
+                    self.jump(0)
+                elif platform1.top < platform2.top - 200:
+                    self.jump(1)
+                else:
+                    self.jump(2)
 
         if obstacle:
             if obstacle.rect.left < self.rect.right + 20 < obstacle.rect.right:
-                self.jump(0)
+                self.jump(1)
+    
+    def process_event(self, event):
+        pass
     
     def jump(self, type):
         if not self.is_floor:
@@ -246,6 +253,8 @@ class Game():
 
     clock = pg.time.Clock()
     font_style = pg.font.SysFont(None, 30)
+    # font_style_big = pg.font.SysFont("rockwell", 50)
+    # font_style_big = pg.font.FontType("ROCK.TTF", 50)
     font_style_big = pg.font.SysFont("rockwell", 50)
     # font_style_big = pg.font.SysFont("verdana", 50)
     font_style_small = pg.font.SysFont(None, 20)
@@ -273,27 +282,20 @@ class Game():
 
     # Obstacle
     obstacle_density = 0.2
-    size = 30
-    obstacle_image = pg.surface.Surface((size, size))
-    obstacle_image.fill(YELLOW)
-    
-    # line_width = 5
-    # shade = (0, 0, 0, 200)
-    # shadow = pg.Surface((line_width, size)).convert_alpha()
-    # shadow.fill(shade)
-    # obstacle_image.blit(shadow, (0, 0))
+    size = 40
+    obstacle_image = pg.surface.Surface((size, size)).convert_alpha()
+    obstacle_image.set_colorkey(COLOR_KEY)
+    obstacle_image.fill(COLOR_KEY)
+    pg.draw.polygon(obstacle_image, YELLOW , [(0, size), (size // 2, 0), (size, size)])
+    msg = pg.font.SysFont("rockwell", 40).render('!', True, BLACK)
+    obstacle_image.blit(msg, (15, 0))
 
-    # platform_image.blit(shadow, (platform_width - line_width, line_width))
-    pg.draw.circle(obstacle_image, BLACK, (size // 2, size * 8 // 10), size // 6)
-    pg.draw.line(obstacle_image, BLACK, (size // 2, size // 7), (size // 2, size * 4 // 7), size // 4)
-    # obstacle_image.fill(BLACK, (0, 0, size, size))
-    # pg.draw.line(obstacle_image, BLACK, (0, 0), (size, size), 3)
-    # pg.draw.line(obstacle_image, BLACK, (0, size), (size, 0), 3)
-
+    deaths = -1
     def __init__(self):
         self.restart()
 
     def restart(self):
+        self.deaths += 1
         self.score = 0
         self.level = 0
 
@@ -312,7 +314,9 @@ class Game():
         self.level += 1
         self.platforms = [Platform.rest_area(player_x, 450, self.rest_width, self.platform_image, self.level)]
         self.construct_platforms()
+        self.level += 1
         self.construct_platforms()
+        self.level += 1
         self.platform = self.platforms.pop(0)
         self.platform_sprites.add(self.platform)
 
@@ -443,6 +447,10 @@ class Game():
         msg = self.font_style_big.render(f'{self.score} m', True, GREY)
         self.screen.blit(msg, (WIDTH - msg.get_width() - 20, 20))
 
+        # Draw death count
+        msg = self.font_style_big.render(f'{self.deaths} deaths', True, GREY)
+        self.screen.blit(msg, (20, 20))
+
         # Draw a line at player's max jump height
         # if self.platform:
         #     max_height = self.platform.top - self.player.max_jump_height
@@ -464,6 +472,7 @@ class Game():
         
 
     def process_events(self):
+        global FPS
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
@@ -477,6 +486,17 @@ class Game():
                 elif event.key == pg.K_s and pg.key.get_mods() & pg.KMOD_CTRL:
                     path = "assets/screenshots"
                     pg.image.save(self.screen, f"{path}/{len(os.listdir(path))}.png")
+                elif event.key == pg.K_DOWN:
+                    
+                    FPS -= 60
+                    FPS = max(10, FPS)
+                    # change screen caption
+                    pg.display.set_caption(f"Canabalt - {FPS}")
+                elif event.key == pg.K_UP:
+                    
+                    FPS += 60
+                    FPS = min(1000, FPS)
+                    pg.display.set_caption(f"Canabalt - {FPS}")
                 elif event.key == pg.K_RETURN:
                     print()
                     for platform in self.platforms:
