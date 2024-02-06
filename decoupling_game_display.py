@@ -29,9 +29,6 @@ class Game():
         self.platforms.remove(platform)
 
 
-
-
-
 class PlatformSprite(Platform):
 
     def __init__(self, platform):

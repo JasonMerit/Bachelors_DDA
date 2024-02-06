@@ -416,7 +416,6 @@ class Game():
         self.process_events()
         # self.screen.fill(BLACK)
         self.draw_background()
-        
 
         # Move objects (wait to draw player until after collision check)
         obstacle = self.obstacle_sprites.sprites()[0] if self.obstacle_sprites else None
@@ -610,6 +609,7 @@ class Game1():
 
     def __init__(self):
         self.restart()
+        print("hello")
     
     def restart(self):
         self.deaths += 1
@@ -720,12 +720,27 @@ class Game1():
             # Generate next level upon completing current level
             if platform.is_rest_area:
                 self.construct_platforms()
-                print('LEVEL UP')
                 self.level += 1
                 
             self.platform = self.platforms.pop(0)
 
-class Display():
+class PlatformSprite(Platform):
+    _keks = 0
+
+    def __init__(self, platform):
+        self.topleft = platform.topleft
+        self.width = platform.width
+
+    def add_internal(self, lol):
+        self._keks += 1
+    
+    def remove_internal(self, lol):
+        self._keks -= 1
+    
+    def update(self):
+        print(self._keks)
+
+class Display(Game1):
     pg.init()
 
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -750,47 +765,42 @@ class Display():
     # msg = pg.font.SysFont("rockwell", 40).render('!', True, BLACK)
     # obstacle_image.blit(msg, (15, 0))
 
-    def __init__(self, game : Game):
-        self.game = game
-        # add a listener to self.game.platforms
+    def __init__(self):
+        # add a listener to self.platforms
         
         self.restart()
     
     def restart(self):
-        # self.game.restart()
+        super().restart()
 
         self.platform_sprites.empty()
-        self.platform_sprites.add(self.game.platform)
+        self.platform_sprites.add(self.platform)
         # self.obstacle_sprites.empty()
         # self.background_sprites.empty()
-        # self.game.construct_platforms = self.construct_platforms
+        # self.construct_platforms = self.construct_platforms
     
     # def platforms_updated(self, platforms):
     #     self.platform_sprites.empty()
-    #     self.platform_sprites.add(platforms + [self.game.platform])
+    #     self.platform_sprites.add(platforms + [self.platform])
     
     # redefine game.construct_platforms to add 
     # new platforms to self.platform_sprites
 
     def tick(self):
-        if self.game.tick():
-            self.restart()
-            return 
+        if super().tick():
+            return
         
         self.process_events()
         # self.draw_background()
         self.screen.fill(BLACK)
 
         # Determine if game has added new platforms
-        for platform in self.game.platforms:
-            if platform not in self.platform_sprites:
-                platform.color = random_color()
-                self.platform_sprites.add(platform)
+        for platform in self.platforms[:2]:
             platform.draw(self.screen)
-        if self.game.platform:
-            self.game.platform.draw(self.screen)
-        # self.platform_sprites.update(self.screen, self.game.scroll_speed)
-        self.game.player.draw(self.screen)
+        if self.platform:
+            self.platform.draw(self.screen)
+        # self.platform_sprites.update(self.screen, self.scroll_speed)
+        self.player.draw(self.screen)
 
         pg.display.update()
         self.clock.tick(FPS)
@@ -806,7 +816,7 @@ class Display():
                     pg.quit()
                     quit()
                 if event.key == pg.K_r:
-                    self.game.restart()
+                    self.restart()
                     self.restart()
                 elif event.key == pg.K_RETURN:
                     self.kek += [1]
@@ -843,7 +853,7 @@ class Display():
                                 if event.key == pg.K_p:
                                     paused = False
             
-            self.game.player.process_event(event)
+            self.player.process_event(event)
 
     base_color = BLACK
     next_color = BLUE
@@ -864,7 +874,7 @@ class Display():
         # self.background_sprites.update(self.screen, 2)
 
 def main():
-    game = Display(Game1()) if GAME else Game()
+    game = Display() if GAME else Game()
     while True:
         game.tick()
 
