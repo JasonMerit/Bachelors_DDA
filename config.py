@@ -1,5 +1,5 @@
 SEED = 23
-PRE_ACTIONS = 25
+PRE_ACTIONS = 2000
 # WIDTH, HEIGHT = 1600, 800
 WIDTH, HEIGHT = 800, 600
 # WIDTH = 2000
@@ -18,7 +18,7 @@ DURATION = 20 # Length of rhythm in seconds (5, 10, 15, 20)
 
 FPS = 6 * 10#120#10 # Frames per second (too high, and tapping wlil cross frames)
 # DT = 1 / FPS
-GOD = 0
+GOD = 1
 AGENT = 0
 FLAT = 0
 GAME = 1

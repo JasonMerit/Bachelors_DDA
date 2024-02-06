@@ -77,7 +77,8 @@ class Platform(pg.sprite.Sprite):
         if self.rect.right <= 0:
             self.kill()
         elif self.rect.left < WIDTH:
-            screen.blit(self.image, self.rect)
+            pass
+            # screen.blit(self.image, self.rect)
     
     def is_colliding(self, player):
         return self.rect.colliderect(player.rect)
@@ -124,20 +125,20 @@ class Player(pg.sprite.Sprite):
         self.image = pg.Surface((size, size)).convert_alpha()
         self.image.fill(color)        
         # add shade to image
-        shade = (0, 0, 0, 100)
-        line_width = size // 8
+        # shade = (0, 0, 0, 100)
+        # line_width = size // 8
 
-        # horinzontal
-        shadow = pg.Surface((size, line_width)).convert_alpha()
-        shadow.fill(shade)
-        self.image.blit(shadow, (0, 0))
-        self.image.blit(shadow, (0, size - line_width))
+        # # horinzontal
+        # shadow = pg.Surface((size, line_width)).convert_alpha()
+        # shadow.fill(shade)
+        # self.image.blit(shadow, (0, 0))
+        # self.image.blit(shadow, (0, size - line_width))
 
-        # Vertical
-        shadow = pg.Surface((line_width, size - 2 * line_width)).convert_alpha()
-        shadow.fill(shade)
-        self.image.blit(shadow, (0, line_width))
-        self.image.blit(shadow, (size - line_width, line_width))
+        # # Vertical
+        # shadow = pg.Surface((line_width, size - 2 * line_width)).convert_alpha()
+        # shadow.fill(shade)
+        # self.image.blit(shadow, (0, line_width))
+        # self.image.blit(shadow, (size - line_width, line_width))
 
         self.rect = self.image.get_rect()
         self.rect.midbottom = (x, y)
@@ -184,10 +185,11 @@ class Player(pg.sprite.Sprite):
     
     def draw(self, screen):
         self.angle += self.angle_speed
+        # print(self.rect.topleft)
         blit_rotate(screen, self.image, self.rect.topleft, -self.angle)
     
     def jump(self):
-        """Jump and hold jump if long is True. Written this way to accound for agent's jump."""
+        """Jump and hold jump if long is True. Written this way to account for agent's jump."""
         self.is_holding = True
         self.hold_frames = 0
         self.speed = -self.jump_speed
@@ -208,7 +210,7 @@ class Player(pg.sprite.Sprite):
         if self.rect.bottom > height:  
             self.rect.bottom = height
             self.is_floor = True
-            self.speed = 0.0
+            self.speed = 0
             self.angle = 0
             self.angle_speed = 0
     
@@ -270,16 +272,16 @@ class Game():
     platform_image = pg.Surface((platform_width, HEIGHT)).convert_alpha()
     platform_image.fill((255, 255, 255))
 
-    shade = (0, 0, 0, 100)
-    line_width = 15
-    shadow = pg.Surface((platform_width, line_width)).convert_alpha()
-    shadow.fill(shade)
-    platform_image.blit(shadow, (0, 0))
+    # shade = (0, 0, 0, 100)
+    # line_width = 15
+    # shadow = pg.Surface((platform_width, line_width)).convert_alpha()
+    # shadow.fill(shade)
+    # platform_image.blit(shadow, (0, 0))
 
-    shadow = pg.Surface((line_width, HEIGHT)).convert_alpha()
-    shadow.fill(shade)
-    platform_image.blit(shadow, (0, line_width))
-    platform_image.blit(shadow, (platform_width - line_width, line_width))
+    # shadow = pg.Surface((line_width, HEIGHT)).convert_alpha()
+    # shadow.fill(shade)
+    # platform_image.blit(shadow, (0, line_width))
+    # platform_image.blit(shadow, (platform_width - line_width, line_width))
     # draw red outline
 
     # Obstacle
