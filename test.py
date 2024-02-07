@@ -138,18 +138,19 @@ class Game():
         self.current_platform = self.construct_platform((pos[0], 100), self.level + 1)
         # self.current_platform = self.construct_platform(pos, self.level + 1)
         self.platforms.append(self.current_platform)
-        self.create_level(1)
-        self.create_level(1)
+        self.level += 1
+        self.create_level()
+        self.level += 1
+        self.create_level()
 
     def tick(self):
         
         self.player.move()
         for platform in self.platforms:
             platform.move(-self.scroll_speed)
-
-            # Remove if offscreen
-            if platform.left + platform.width < 0:
-                self.remove_platform(platform)
+        
+        if self.platforms[0].right < 0:
+            self.remove_platform()
         
         # -----| Platform Transitions |-----
         # Leaving current platform
@@ -219,6 +220,9 @@ class Game():
         max_y = min(int(y + 0.7 * h), self.max_height)  # 0.7 grace
         new_y = random.randrange(self.min_height, max_y)
 
+        t = t1 + t2
+        max_x = int(t * self.scroll_speed * 0.7)  # 0.7 grace
+        new_x = x + random.randrange(self.min_gap, max_x)
         # print(f'---- {self.level} ----')
         # max_y = min(int(y + 0.7 * self.player.max_jump_height), self.max_height)  # 0.7 grace
         # new_y = random.randrange(self.min_height, max_y)
@@ -226,7 +230,6 @@ class Game():
         # max_x = int(self.player.fly_time(new_y - max_y) * self.scroll_speed * 0.7)  # 0.7 grace
         # new_x = x + random.randrange(self.min_gap, max_x)
         
-        new_x, new_y = x + self.min_gap, new_y
         return new_x, new_y
     
 
@@ -237,8 +240,8 @@ class Game():
         width = self.rest_width if level else self.platform_width
         return Platform(topleft, width, level=level)
 
-    def remove_platform(self, platform):
-        self.platforms.remove(platform)
+    def remove_platform(self):
+        self.platforms.pop(0)
     
 
 if __name__ == "__main__":

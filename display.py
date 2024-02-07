@@ -21,20 +21,26 @@ def lerp_color(color1, color2, t):
 class PlatformSprite(Platform, Sprite):
 
     def __init__(self, platform, color):
-        Sprite.__init__(self)
         super().__init__(platform.topleft, platform.width, level=platform.is_rest_area)
-        
-        self.surface = Surface((platform.width, platform.top + 10))
-        # pg.draw.rect(self.surface, WHITE, self.rect, 0, 10)
-        # pg.draw.rect(self.surface, SHADE, self.rect, 15, 10)
+        Sprite.__init__(self)
 
         self.surface = pg.Surface((platform.width, HEIGHT)).convert_alpha()
         self.rect = self.surface.get_rect()
         self.surface.set_colorkey((0, 0, 0))
         pg.draw.rect(self.surface, WHITE, self.rect, 0, 10)
-        pg.draw.rect(self.surface, SHADE, self.rect, 15, 10)
+        shade_color = lerp_color(color, WHITE, 0.4)
+        pg.draw.rect(self.surface, shade_color, self.rect, 15, 10)
+        # pg.draw.rect(self.surface, SHADE, self.rect, 15, 10)
 
         self.surface.fill(color, special_flags=3)
+
+        if self.is_rest_area:
+            font = pg.font.SysFont("rockwell", 50)
+            msg = font.render(f"LEVEL {self.is_rest_area}", True, GREY)
+            x = (msg.get_width() - self.width // 4) / 2  
+            y = (self.top - msg.get_height()) / 2
+            self.surface.blit(msg, (x, y))
+            
 
     def update(self, screen : Surface):
         screen.blit(self.surface, (self.x, HEIGHT - self.top))
@@ -144,8 +150,8 @@ class Display(Game):
         self.sprites.add(platform_sprite)
         return platform_sprite
 
-    def remove_platform(self, platform):
-        super().remove_platform(platform)
+    def remove_platform(self):
+        platform = self.platforms.pop(0)
         self.sprites.remove(platform)
 
     def process_events(self):
