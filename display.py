@@ -4,7 +4,7 @@ from pygame.surface import Surface
 from pygame.sprite import Sprite, Group
 import random, os
 
-from test import Game, Platform, Player
+from endless_runner import Game, Platform, Player
 from config import *
 
 def blit_rotate(surf, image, topleft, angle):
@@ -207,9 +207,11 @@ class Display(Game):
             self.player.process_event(event)
             # |-|--|--|-|- rhythm 
 
-if __name__ == "__main__":
+def main():
     display = Display()
 
-    # Check if the display is working
     while True:
         display.tick()
+        
+if __name__ == "__main__":
+    main()
