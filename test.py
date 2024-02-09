@@ -5,15 +5,20 @@ from math import sqrt
 from config import *
 import time
 
-
 class Platform():
     """x and top define position, representing the top left corner of the platform.
     """
-    x, width, top = 0, 0, 0
+    scroll_speed = 5
+    rest_area_width = 300
     def __init__(self, topleft, width, level = 0):
         self.x, self.top = topleft
         self.width = width
         self.is_rest_area = level
+    
+    @classmethod
+    def rest_area(cls, topleft, level):
+        return cls(topleft, cls.rest_area_width, level)
+    
     
     @property 
     def topleft(self):
@@ -31,8 +36,8 @@ class Platform():
     def left(self):
         return self.x
     
-    def move(self, dx):
-        self.x += dx
+    def move(self):
+        self.x -= self.scroll_speed
 
 class Player():
     """x and y define position, representing the BOTTOM left corner of the player.
@@ -113,7 +118,7 @@ class Player():
 class Game():
     platforms = []  # List of platforms that are moved every tick
 
-    scroll_speed = 5
+    # scroll_speed = 5
     rest_width = 300
     max_height, min_height = HEIGHT - 100, 100
     min_gap = 50
@@ -146,8 +151,13 @@ class Game():
     def tick(self):
         
         self.player.move()
+        # Platform.move_all(-self.scroll_speed)
         for platform in self.platforms:
-            platform.move(-self.scroll_speed)
+            platform.move()
+            # platform.move(-self.scroll_speed)
+
+            # if platform.right < 0:
+            #     self.remove_platform()
         
         if self.platforms[0].right < 0:
             self.remove_platform()
@@ -164,9 +174,12 @@ class Game():
             platform = self.platforms[1]
 
             # Wall collision
-            if not GOD and self.player.y < platform.top - 30:  # 30 Grace
-                self.restart()
-                return
+            if self.player.y < platform.top - 30:  # 30 Grace
+                if not GOD:
+                    self.restart()
+                    return
+                self.player.y = platform.top
+            
             
             # Generate next level upon completing current level
             if platform.is_rest_area:
@@ -185,10 +198,11 @@ class Game():
             #     return
         else:
             # Check for off screen
-            if not GOD and self.player.y < 0:
-                self.restart()
-                print("Off screen")
-                return
+            if self.player.y < 0:
+                if not GOD:
+                    self.restart()
+                    return
+                self.player.y = HEIGHT
         self.score += 1
     
     def create_level(self, count=4):
@@ -221,7 +235,7 @@ class Game():
         new_y = random.randrange(self.min_height, max_y)
 
         t = t1 + t2
-        max_x = int(t * self.scroll_speed * 0.7)  # 0.7 grace
+        max_x = int(t * Platform.scroll_speed * 0.7)  # 0.7 grace
         new_x = x + random.randrange(self.min_gap, max_x)
         # print(f'---- {self.level} ----')
         # max_y = min(int(y + 0.7 * self.player.max_jump_height), self.max_height)  # 0.7 grace

@@ -35,7 +35,8 @@ class PlatformSprite(Platform, Sprite):
         self.surface.fill(color, special_flags=3)
 
         if self.is_rest_area:
-            font = pg.font.SysFont("rockwell", 50)
+            font = pg.font.Font("ROCK.TTF", 50)
+            # font = pg.font.SysFont("rockwell", 50)
             msg = font.render(f"LEVEL {self.is_rest_area}", True, GREY)
             x = (msg.get_width() - self.width // 4) / 2  
             y = (self.top - msg.get_height()) / 2
@@ -105,7 +106,8 @@ class Display(Game):
 
     clock = pg.time.Clock()
     # font_style = pg.font.SysFont(None, 30)
-    font_big = pg.font.SysFont("rockwell", 50)
+    # font_big = pg.font.SysFont("rockwell", 50)
+    font_big = pg.font.Font("ROCK.TTF", 50)
     # font_style_small = pg.font.SysFont(None, 20)
  
     def __init__(self):
@@ -148,6 +150,7 @@ class Display(Game):
         color = GREEN if level else random_color()
         platform_sprite = PlatformSprite(platform, color)
         self.sprites.add(platform_sprite)
+        del platform
         return platform_sprite
 
     def remove_platform(self):
@@ -166,8 +169,8 @@ class Display(Game):
                     quit()
                 if event.key == pg.K_r:
                     self.restart()
-                # elif event.key == pg.K_RETURN:
-                #     self.kek += [1]
+                elif event.key == pg.K_RETURN:
+                    Platform.scroll_speed += 1
 
                 elif event.key == pg.K_s and pg.key.get_mods() & pg.KMOD_CTRL:
                     path = "assets/screenshots"
