@@ -18,7 +18,7 @@ DURATION = 20 # Length of rhythm in seconds (5, 10, 15, 20)
 
 FPS = 6 * 10#120#10 # Frames per second (too high, and tapping wlil cross frames)
 # DT = 1 / FPS
-GOD = 1
+GOD = 0
 AGENT = 1
 FLAT = 0
 GAME = 1

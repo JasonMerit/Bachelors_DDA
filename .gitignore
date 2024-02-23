@@ -1,2 +1,4 @@
 assets
 export
+__pycache__/
+*.py[cod]
