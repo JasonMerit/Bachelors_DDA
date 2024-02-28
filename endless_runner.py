@@ -64,6 +64,14 @@ class Player():
         self.x, self.y = pos
         self.size = size
     
+    def restart(self):
+        self.x, self.y = self.pos[0], 100
+        self.speed = 0
+        self.is_floor = True
+        self.is_holding = False
+        self.angle = 0
+        self.angle_speed = 0
+    
     @property
     def pos(self):
         return self.x, self.y
@@ -114,16 +122,19 @@ class Player():
     
 
 class Game():
-    platforms = []  # List of platforms that are moved every tick
+    
 
-    # scroll_speed = 5
-    rest_width = 300
-    max_height, min_height = HEIGHT - 100, 100
-    min_gap = 50
-    platform_width = 300 if not FLAT else 100000
-    # obstacle_density = 0.2
-    # obstacle_size = 40
-    deaths = -1
+    def __init__(self):
+        self.platforms = []  # List of platforms that are moved every tick
+        self.rest_width = 300
+        self.max_height, self.min_height = HEIGHT - 100, 100
+        self.min_gap = 50
+        self.platform_width = 300 if not FLAT else 100000
+
+        # Player
+        self.player_pos = WIDTH // 8, 100
+        self.player = self.construct_player(self.player_pos, size=30)
+        self.deaths = -1
     
     def restart(self):
         self.deaths += 1
@@ -131,14 +142,14 @@ class Game():
         self.level = 0
     
         # Player
-        pos = WIDTH // 8, 100
+        self.player.restart()
         # pos = WIDTH // 8, HEIGHT // 5
-        self.player = self.construct_player(pos, 30)
+        # reset player position and rotation
         # self.player_max_jump_height = self.player.jump_speed * self.player.max_hold_frames
 
         # Platforms
         self.platforms = []
-        self.current_platform = self.construct_platform((pos[0], 100), self.level + 1)
+        self.current_platform = self.construct_platform(self.player_pos, self.level + 1)
         # self.current_platform = self.construct_platform(pos, self.level + 1)
         self.platforms.append(self.current_platform)
         self.level += 1

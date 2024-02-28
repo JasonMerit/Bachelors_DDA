@@ -47,15 +47,17 @@ class PlatformSprite(Platform, Sprite):
         screen.blit(self.surface, (self.x, HEIGHT - self.top))
 
 class PlayerSprite(Player, Sprite):
-    def __init__(self, player):
+    def __init__(self, player, sprites : Group):
         Sprite.__init__(self)
         super().__init__(player.pos, player.size)
         self.surface = Surface((self.size, self.size)).convert_alpha()
         self.surface.fill(WHITE)        
+        self.sprites = sprites
         # add shade to image
 
         shade = (0, 0, 0, 100)
         line_width = self.size // 8
+        
         # horinzontal
         shadow = Surface((self.size, line_width)).convert_alpha()
         shadow.fill(shade)
@@ -69,6 +71,10 @@ class PlayerSprite(Player, Sprite):
         self.surface.blit(shadow, (self.size - line_width, line_width))
 
         # self.rect.bottomleft = self.pos[0], HEIGHT - self.pos[1] - self.size
+    
+    def restart(self):
+        super().restart()
+        self.sprites.add(self)
 
     @property
     def topleft(self):
@@ -112,7 +118,8 @@ class Display(Game):
  
     def __init__(self):
         self.sprites = Group()
-        self.restart()
+        super().__init__()
+        # self.restart()
     
     def restart(self):
         self.sprites.empty()
@@ -141,8 +148,8 @@ class Display(Game):
     
     def construct_player(self, pos, size):
         player = super().construct_player(pos, size)
-        player_sprite = PlayerSprite(player)
-        self.sprites.add(player_sprite)
+        player_sprite = PlayerSprite(player, self.sprites)
+        # self.sprites.add(player_sprite)
         return player_sprite
     
     def construct_platform(self, topleft, level=0):
@@ -209,6 +216,7 @@ class Display(Game):
 
 def main():
     display = Display()
+    display.restart()
 
     while True:
         display.tick()

@@ -13,7 +13,7 @@ class Agent():
         plat1, plat2 = self.game.platforms[0], self.game.platforms[1]
         if self.player.right <= plat1.right or plat2.is_rest_area or self.player.y == plat2.top:
             return
-        dx, dy = plat2.topleft[0] - plat1.topright[0], plat2.topleft[1] - plat1.topright[1]
+        # dx, dy = plat2.topleft[0] - plat1.topright[0], plat2.topleft[1] - plat1.topright[1]
         # Determine jump type
         if plat1.top > plat2.top:
             self.jump(0)
@@ -49,6 +49,7 @@ class Environemt():
 
 if __name__ == '__main__':
     game = display.Display()
+    game.restart()
     agent = Agent(game)
 
     while True:
