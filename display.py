@@ -8,7 +8,7 @@ from endless_runner import Game, Platform, Player
 from config import *
 
 FONT = "rockwell"
-for root, dirs, files in os.walk("."):
+for root, dirs, files in os.walk("/"):
     # print(root)
     for file in files:
         if file.endswith(".TTF"):

@@ -1,6 +1,7 @@
 import random
 import numpy as np
 from math import sqrt
+import typing
 
 from config import *
 
@@ -133,13 +134,13 @@ class Game():
 
         # Player
         self.player_pos = WIDTH // 8, 100
-        self.player = self.construct_player(self.player_pos, size=30)
+        self.player : Player = self.construct_player(self.player_pos, size=30)
         self.deaths = -1
     
     def restart(self):
         self.deaths += 1
         self.score = 0
-        self.level = 0
+        self.level = 1
     
         # Player
         self.player.restart()
@@ -149,37 +150,46 @@ class Game():
 
         # Platforms
         self.platforms = []
-        self.current_platform = self.construct_platform(self.player_pos, self.level + 1)
+        self.current_platform = self.construct_platform(self.player_pos, self.level)
         # self.current_platform = self.construct_platform(pos, self.level + 1)
         self.platforms.append(self.current_platform)
-        self.level += 1
-        self.create_level()
-        self.level += 1
-        self.create_level()
+        self.platforms += self.create_level()
+        self.platforms += self.create_level()
+        
 
     def tick(self):
-        
+        self.update_positions()
+        self.current_platform = self.platform_transition(self.current_platform)
+        self.floor_collision(self.current_platform)
+        self.score += 1
+    
+    def update_positions(self):
+        """Update player and platforms positions. Also remove off screen platform."""
         self.player.move()
-        # Platform.move_all(-self.scroll_speed)
+
         for platform in self.platforms:
             platform.move()
-            # platform.move(-self.scroll_speed)
-
-            # if platform.right < 0:
-            #     self.remove_platform()
         
         if self.platforms[0].right < 0:
             self.remove_platform()
-        
-        # -----| Platform Transitions |-----
+
+    def platform_transition(self, platform : Platform):
+        """Check if player is leaving current platform and reaching new platform.
+        Also checks for wall collision when reaching new platform.
+
+        :param platform: current platform
+        :return: new platform
+        """
+
         # Leaving current platform
-        if self.current_platform and self.player.right > self.current_platform.right + 20:  # Grace
-            self.current_platform = None
+        if platform and self.player.right > platform.right + 20:  # Grace
+            platform = None
             self.player.fall()  # Let player fall
 
         # Reaching new platform 
         # ASSUMPTION A Leaving current platform assumes next platform is platforms[1]
-        if self.current_platform is None and self.player.right > self.platforms[1].left:
+            # this seems guraranteed currently?
+        if platform is None and self.player.right > self.platforms[1].left:
             platform = self.platforms[1]
 
             # Wall collision
@@ -192,13 +202,17 @@ class Game():
             
             # Generate next level upon completing current level
             if platform.is_rest_area:
-                self.level += 1
-                self.create_level()
+                self.platforms += self.create_level()
 
-            self.current_platform = platform
+        return platform
 
-        # -----| Collision check |-----
-        if self.current_platform:
+    def floor_collision(self, platform : Platform):
+        """Floor collision with platform and obstacle collision with player.
+        Also checks for off screen death.
+
+        :param platform: current platform
+        """
+        if platform:
             self.player.floor_collision(self.current_platform.top)
 
             # Check for obstacle collision
@@ -212,19 +226,24 @@ class Game():
                     self.restart()
                     return
                 self.player.y = HEIGHT
-        self.score += 1
-    
-    def create_level(self, count=4):
-        for _ in range(count):
-            x, y = self.get_next_position(*self.platforms[-1].topright)
-            # x, y = self.platforms[-1].topright
-            # x += self.min_gap
-            self.platforms.append(self.construct_platform((x, y)))
-        # Append rest area
-        topleft = self.platforms[-1].topright
-        self.platforms.append(self.construct_platform(topleft, self.level + 1))
 
-    def get_next_position(self, x, y):
+
+    def create_level(self, count=4):
+        self.level += 1
+        platforms = []
+        topright = self.platforms[-1].topright
+        for _ in range(count):
+            x, y = self._get_next_position(*topright)
+            platforms.append(self.construct_platform((x, y)))
+
+            topright = platforms[-1].topright
+        # Append rest area
+        topleft = platforms[-1].topright
+        platforms.append(self.construct_platform(topleft, self.level))
+
+        return platforms
+
+    def _get_next_position(self, x, y):
         """
         :param x, y: top right of previous platform
         :return: x, y: top left of next platform
