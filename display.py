@@ -7,6 +7,18 @@ import random, os
 from endless_runner import Game, Platform, Player
 from config import *
 
+FONT = "rockwell"
+for root, dirs, files in os.walk("."):
+    # print(root)
+    for file in files:
+        if file.endswith(".TTF"):
+            print(file)
+            FONT = os.path.join(root, file)[2:]
+            print("=========")
+            print(root)
+            break
+# print(FONT)
+# quit()
 def blit_rotate(surf, image, topleft, angle):
     rotated_image = pg.transform.rotate(image, angle)
     new_rect = rotated_image.get_rect(center = image.get_rect(topleft = topleft).center)
@@ -19,6 +31,8 @@ def lerp_color(color1, color2, t):
     return [x + (y-x) * t for x, y in zip(Color(color1), Color(color2))]
 
 class PlatformSprite(Platform, Sprite):
+    pg.font.init()
+    font = pg.font.Font(FONT, 50)
 
     def __init__(self, platform, color):
         super().__init__(platform.topleft, platform.width, level=platform.is_rest_area)
@@ -35,9 +49,9 @@ class PlatformSprite(Platform, Sprite):
         self.surface.fill(color, special_flags=3)
 
         if self.is_rest_area:
-            font = pg.font.Font("ROCK.TTF", 50)
+            # font = pg.font.Font("ROCK.TTF", 50)
             # font = pg.font.SysFont("rockwell", 50)
-            msg = font.render(f"LEVEL {self.is_rest_area}", True, GREY)
+            msg = self.font.render(f"LEVEL {self.is_rest_area}", True, GREY)
             x = (msg.get_width() - self.width // 4) / 2  
             y = (self.top - msg.get_height()) / 2
             self.surface.blit(msg, (x, y))
@@ -113,7 +127,8 @@ class Display(Game):
     clock = pg.time.Clock()
     # font_style = pg.font.SysFont(None, 30)
     # font_big = pg.font.SysFont("rockwell", 50)
-    font_big = pg.font.Font("ROCK.TTF", 50)
+    font_big = pg.font.Font(FONT, 50)
+    # font_big = pg.font.Font("ROCK.TTF", 50)
     # font_style_small = pg.font.SysFont(None, 20)
  
     def __init__(self):
