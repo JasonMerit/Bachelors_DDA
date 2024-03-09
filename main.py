@@ -1,15 +1,17 @@
-from environment import EndlessRunnerEnv
+# from environment import EndlessRunnerEnv
 from agent import Agent
 
 
+
 def main():
-    env = EndlessRunnerEnv(render=True)
-    agent = Agent(env)
-    env.restart()
-    for _ in range(1000):
-    # while True:
-        agent.step()
-        env.tick()
+    pass
+    # env = EndlessRunnerEnv(render=True)
+    # agent = Agent(env)
+    # env.restart()
+    # for _ in range(1000):
+    # # while True:
+    #     agent.step()
+    #     env.tick()
 
 
 if __name__ == "__main__":

@@ -56,7 +56,6 @@ class Display(EndlessRunner):
         # Process events, tick the game, and update sprites
         self.process_events()
         return super().tick()
-        # self.render()
         
     def render(self):
         self.screen.fill(BLACK)
@@ -79,8 +78,8 @@ class Display(EndlessRunner):
         player_sprite = PlayerSprite(player)
         return player_sprite
     
-    def construct_platform(self, topleft, level=0):
-        platform = super().construct_platform(topleft, level=level)
+    def construct_platform(self, topleft, width=300, level=0):
+        platform = super().construct_platform(topleft, width, level=level)
         color = GREEN if level else random_color()
         platform_sprite = PlatformSprite(platform, color)
         self.sprites.add(platform_sprite)
