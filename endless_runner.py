@@ -50,8 +50,11 @@ class Player():
     jump_speed = 15
     is_holding = False
     max_hold_frames = 10
+    jump_times = [42, max_hold_frames, max_hold_frames // 2, 0]  # 42 is for no jump, but index is never 0
     hold_frames = 0
     jump_threshold = 10
+
+    # Rotation (visual)
     angle = 0
     angle_speed = 0
     rotations = 2
@@ -65,7 +68,7 @@ class Player():
         self.x, self.y = pos
         self.size = size
     
-    def restart(self):
+    def reset(self):
         self.x, self.y = self.pos[0], 100
         self.speed = 0
         self.is_floor = True
@@ -81,6 +84,10 @@ class Player():
     def right(self):
         return self.x + self.size
     
+    @property
+    def left(self):
+        return self.x
+    
     def move(self):
         # # Apply gravity if not on floor
         if not self.is_floor:  
@@ -91,27 +98,24 @@ class Player():
                     self.is_holding = False  # Release jump from expired hold
             else:
                 self.speed -= self.gravity
+                # self.angle_speed = 100  # Rotate to simulate falling
 
             self.y += self.speed
         # print(f'y: {self.y}')
     
-    def jump(self):
-        """Jump and hold jump if long is True. Written this way to accound for agent's jump."""
+    def jump(self, hold_frames=None):
+        """Jump and hold jump if long is True. 
+        Written this way to account for agent's jump."""
         self.is_holding = True
-        self.hold_frames = 0
+        if hold_frames is None:  # Human player
+            self.hold_frames = 0
+        else:
+            self.hold_frames = self.jump_times[hold_frames]  # -1 is for no jump, but action is never 0
         self.speed = self.jump_speed
         self.fall()
     
     def fall(self):
         self.is_floor = False
-        
-        # d = self.jump_speed ** 2 + 2 * self.gravity * self.jump_speed * self.max_hold_frames
-        # t = (self.jump_speed + sqrt(d)) / self.gravity + self.max_hold_frames
-        # omega = self.rotations * 90 / t
-        # # d = self.jump_speed ** 2 + 2 * self.gravity * (self.rect.bottom - self.max_jump_height)
-        # self.angle_speed = omega
-
-        # self.angle_speed = 5
 
     def floor_collision(self, height):
         if self.y < height:  
@@ -120,30 +124,28 @@ class Player():
             self.speed = 0
             self.angle = 0
             self.angle_speed = 0
-    
-
-class Game():
-    
+import time
+class EndlessRunner():
 
     def __init__(self):
         self.platforms = []  # List of platforms that are moved every tick
-        self.rest_width = 300
         self.max_height, self.min_height = HEIGHT - 100, 100
         self.min_gap = 50
-        self.platform_width = 300 if not FLAT else 100000
+        self.rest_width = 300 if not FLAT else 100000
+        self.platform_width = 300
 
         # Player
         self.player_pos = WIDTH // 8, 100
         self.player : Player = self.construct_player(self.player_pos, size=30)
         self.deaths = -1
     
-    def restart(self):
+    def reset(self):
         self.deaths += 1
         self.score = 0
         self.level = 1
     
         # Player
-        self.player.restart()
+        self.player.reset()
         # pos = WIDTH // 8, HEIGHT // 5
         # reset player position and rotation
         # self.player_max_jump_height = self.player.jump_speed * self.player.max_hold_frames
@@ -151,8 +153,8 @@ class Game():
         # Platforms
         self.platforms = []
         self.current_platform = self.construct_platform(self.player_pos, self.level)
-        # self.current_platform = self.construct_platform(pos, self.level + 1)
         self.platforms.append(self.current_platform)
+        
         self.platforms += self.create_level()
         self.platforms += self.create_level()
         
@@ -160,8 +162,14 @@ class Game():
     def tick(self):
         self.update_positions()
         self.current_platform = self.platform_transition(self.current_platform)
-        self.floor_collision(self.current_platform)
+        if self.current_platform is False:
+            return True  # Terminated
+        
+        if self.floor_collision(self.current_platform) is False:
+            return True  # Terminated
+        
         self.score += 1
+        return False  # Terminated (replace all self.restart() with return True)
     
     def update_positions(self):
         """Update player and platforms positions. Also remove off screen platform."""
@@ -195,9 +203,9 @@ class Game():
             # Wall collision
             if self.player.y < platform.top - 30:  # 30 Grace
                 if not GOD:
-                    self.restart()
-                    return
-                self.player.y = platform.top
+                    print('Wall collision')
+                    return False
+                self.player.y = platform.top  # Assuming flat surface
             
             
             # Generate next level upon completing current level
@@ -223,20 +231,21 @@ class Game():
             # Check for off screen
             if self.player.y < 0:
                 if not GOD:
-                    self.restart()
-                    return
+                    print("Off screen")
+                    return False
                 self.player.y = HEIGHT
 
 
-    def create_level(self, count=4):
+    def create_level(self, count=3):
         self.level += 1
         platforms = []
         topright = self.platforms[-1].topright
         for _ in range(count):
-            x, y = self._get_next_position(*topright)
-            platforms.append(self.construct_platform((x, y)))
-
+            topleft = self._get_next_position(*topright)
+            platforms.append(self.construct_platform(topleft))
+            
             topright = platforms[-1].topright
+            
         # Append rest area
         topleft = platforms[-1].topright
         platforms.append(self.construct_platform(topleft, self.level))
@@ -274,6 +283,9 @@ class Game():
         
         return new_x, new_y
     
+    def jump(self, action):
+        if self.player.is_floor:
+            self.player.jump(action)
 
     def construct_player(self, pos, size):
         return Player(pos, size)
@@ -284,10 +296,12 @@ class Game():
 
     def remove_platform(self):
         self.platforms.pop(0)
-    
+
+
+
 def main():
-    game = Game()
-    game.restart()
+    game = EndlessRunner()
+    game.reset()
     for _ in range(PRE_ACTIONS):
         game.tick()
 

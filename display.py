@@ -2,23 +2,20 @@ import pygame as pg
 from pygame.color import Color
 from pygame.surface import Surface
 from pygame.sprite import Sprite, Group
-import random, os
+import random, os, time
 
-from endless_runner import Game, Platform, Player
+from endless_runner import EndlessRunner, Platform, Player
 from config import *
 
+from math import sqrt
+
 FONT = "rockwell"
-for root, dirs, files in os.walk("/"):
-    # print(root)
+for root, dirs, files in os.walk("."):
     for file in files:
         if file.endswith(".TTF"):
-            print(file)
             FONT = os.path.join(root, file)[2:]
-            print("=========")
-            print(root)
             break
-# print(FONT)
-# quit()
+        
 def blit_rotate(surf, image, topleft, angle):
     rotated_image = pg.transform.rotate(image, angle)
     new_rect = rotated_image.get_rect(center = image.get_rect(topleft = topleft).center)
@@ -30,95 +27,7 @@ def random_color():
 def lerp_color(color1, color2, t):
     return [x + (y-x) * t for x, y in zip(Color(color1), Color(color2))]
 
-class PlatformSprite(Platform, Sprite):
-    pg.font.init()
-    font = pg.font.Font(FONT, 50)
-
-    def __init__(self, platform, color):
-        super().__init__(platform.topleft, platform.width, level=platform.is_rest_area)
-        Sprite.__init__(self)
-
-        self.surface = pg.Surface((platform.width, HEIGHT)).convert_alpha()
-        self.rect = self.surface.get_rect()
-        self.surface.set_colorkey((0, 0, 0))
-        pg.draw.rect(self.surface, WHITE, self.rect, 0, 10)
-        shade_color = lerp_color(color, WHITE, 0.4)
-        pg.draw.rect(self.surface, shade_color, self.rect, 15, 10)
-        # pg.draw.rect(self.surface, SHADE, self.rect, 15, 10)
-
-        self.surface.fill(color, special_flags=3)
-
-        if self.is_rest_area:
-            # font = pg.font.Font("ROCK.TTF", 50)
-            # font = pg.font.SysFont("rockwell", 50)
-            msg = self.font.render(f"LEVEL {self.is_rest_area}", True, GREY)
-            x = (msg.get_width() - self.width // 4) / 2  
-            y = (self.top - msg.get_height()) / 2
-            self.surface.blit(msg, (x, y))
-            
-
-    def update(self, screen : Surface):
-        screen.blit(self.surface, (self.x, HEIGHT - self.top))
-
-class PlayerSprite(Player, Sprite):
-    def __init__(self, player, sprites : Group):
-        Sprite.__init__(self)
-        super().__init__(player.pos, player.size)
-        self.surface = Surface((self.size, self.size)).convert_alpha()
-        self.surface.fill(WHITE)        
-        self.sprites = sprites
-        # add shade to image
-
-        shade = (0, 0, 0, 100)
-        line_width = self.size // 8
-        
-        # horinzontal
-        shadow = Surface((self.size, line_width)).convert_alpha()
-        shadow.fill(shade)
-        self.surface.blit(shadow, (0, 0))
-        self.surface.blit(shadow, (0, self.size - line_width))
-
-        # Vertical
-        shadow = Surface((line_width, self.size - 2 * line_width)).convert_alpha()
-        shadow.fill(shade)
-        self.surface.blit(shadow, (0, line_width))
-        self.surface.blit(shadow, (self.size - line_width, line_width))
-
-        # self.rect.bottomleft = self.pos[0], HEIGHT - self.pos[1] - self.size
-    
-    def restart(self):
-        super().restart()
-        self.sprites.add(self)
-
-    @property
-    def topleft(self):
-        return (self.x, HEIGHT - self.y - self.size)
-
-    def update(self, screen : Surface):
-        self.angle += self.angle_speed
-        blit_rotate(screen, self.surface, self.topleft, -self.angle)
-    
-    def fall(self):
-        super().fall()
-        
-        # d = self.jump_speed ** 2 + 2 * self.gravity * self.jump_speed * self.max_hold_frames
-        # t = (self.jump_speed + sqrt(d)) / self.gravity + self.max_hold_frames
-        # omega = self.rotations * 90 / t
-        # # d = self.jump_speed ** 2 + 2 * self.gravity * (self.rect.bottom - self.max_jump_height)
-        # self.angle_speed = omega
-
-        self.angle_speed = 5
-    
-    def process_event(self, event):
-        if event.type == pg.KEYDOWN:
-            if event.key == pg.K_SPACE and self.is_floor:
-                self.jump()
-                
-        elif event.type == pg.KEYUP:
-            if event.key == pg.K_SPACE:
-                self.is_holding = False  # Release jump from keyup
-
-class Display(Game):
+class Display(EndlessRunner):
     pg.init()
 
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -134,18 +43,22 @@ class Display(Game):
     def __init__(self):
         self.sprites = Group()
         super().__init__()
-        # self.restart()
     
-    def restart(self):
+    def reset(self):
         self.sprites.empty()
-        super().restart()
+        self.sprites.add(self.player)
+        super().reset()
+    
+    def close(self):
+        pg.quit()
     
     def tick(self):
         # Process events, tick the game, and update sprites
         self.process_events()
-
-        super().tick()
+        return super().tick()
+        # self.render()
         
+    def render(self):
         self.screen.fill(BLACK)
         self.sprites.update(self.screen)
         
@@ -163,8 +76,7 @@ class Display(Game):
     
     def construct_player(self, pos, size):
         player = super().construct_player(pos, size)
-        player_sprite = PlayerSprite(player, self.sprites)
-        # self.sprites.add(player_sprite)
+        player_sprite = PlayerSprite(player)
         return player_sprite
     
     def construct_platform(self, topleft, level=0):
@@ -172,7 +84,6 @@ class Display(Game):
         color = GREEN if level else random_color()
         platform_sprite = PlatformSprite(platform, color)
         self.sprites.add(platform_sprite)
-        del platform
         return platform_sprite
 
     def remove_platform(self):
@@ -190,7 +101,7 @@ class Display(Game):
                     pg.quit()
                     quit()
                 if event.key == pg.K_r:
-                    self.restart()
+                    self.reset()
                 elif event.key == pg.K_RETURN:
                     Platform.scroll_speed += 1
 
@@ -229,12 +140,118 @@ class Display(Game):
             self.player.process_event(event)
             # |-|--|--|-|- rhythm 
 
+class PlatformSprite(Platform, Sprite):
+    font = pg.font.Font(FONT, 50)
+
+    def __init__(self, platform, color):
+        super().__init__(platform.topleft, platform.width, level=platform.is_rest_area)
+        Sprite.__init__(self)
+
+        # self.surface = pg.Surface((platform.width, HEIGHT))
+        # t0 = time.time()
+        self.surface = pg.Surface((platform.width, HEIGHT))
+        # self.surface = pg.Surface((platform.width, HEIGHT)).convert()
+        # self.surface = pg.Surface((platform.width, HEIGHT)).convert_alpha()
+        # print(f'Time: {time.time() - t0:.2f}')
+        self.rect = self.surface.get_rect()
+        self.surface.set_colorkey((0, 0, 0))
+        pg.draw.rect(self.surface, WHITE, self.rect, 0, 10)
+        shade_color = lerp_color(color, WHITE, 0.4)
+        pg.draw.rect(self.surface, shade_color, self.rect, 15, 10)
+        # pg.draw.rect(self.surface, SHADE, self.rect, 15, 10)
+
+        self.surface.fill(color, special_flags=3)  # 0.63
+
+        if self.is_rest_area:
+            # font = pg.font.Font("ROCK.TTF", 50)
+            # font = pg.font.SysFont("rockwell", 50)
+            msg = self.font.render(f"LEVEL {self.is_rest_area}", True, GREY)
+            x = (msg.get_width() - self.width // 4) / 2  
+            y = (self.top - msg.get_height()) / 2
+            self.surface.blit(msg, (x, y))
+            
+
+    def update(self, screen : Surface):
+        screen.blit(self.surface, (self.x, HEIGHT - self.top))
+
+class PlayerSprite(Player, Sprite):
+    
+    def __init__(self, player):
+        Sprite .__init__(self)
+        super().__init__(player.pos, player.size)
+        self.surface = Surface((self.size, self.size)).convert_alpha()
+        self.surface.fill(WHITE)        
+        # add shade to image
+
+        shade = (0, 0, 0, 100)
+        line_width = self.size // 8
+        
+        # horinzontal
+        shadow = Surface((self.size, line_width)).convert_alpha()
+        shadow.fill(shade)
+        self.surface.blit(shadow, (0, 0))
+        self.surface.blit(shadow, (0, self.size - line_width))
+
+        # Vertical
+        shadow = Surface((line_width, self.size - 2 * line_width)).convert_alpha()
+        shadow.fill(shade)
+        self.surface.blit(shadow, (0, line_width))
+        self.surface.blit(shadow, (self.size - line_width, line_width))
+
+        # self.rect.bottomleft = self.pos[0], HEIGHT - self.pos[1] - self.size
+    
+    @property
+    def topleft(self):
+        return (self.x, HEIGHT - self.y - self.size)
+
+    def update(self, screen : Surface):
+        if self.angle_speed == 0:
+            screen.blit(self.surface, self.topleft)
+        else:
+            self.angle += self.angle_speed
+            blit_rotate(screen, self.surface, self.topleft, -self.angle)
+    
+    def fall(self):
+        super().fall()
+        
+        # First phase constant speed
+        # h = v_0t_1 
+        v, t1 = self.jump_speed, self.max_hold_frames
+        h = v*t1
+        
+        # Second phase constant acceleration
+        # y = h + v_1t_2 - 1/2gt_2^2 = 0
+        g = self.gravity
+        t2 = (v + sqrt(v**2 + 2 * g * h)) / g  # positive root
+
+        t = t1 + t2
+        omega = 90 / t
+        self.angle_speed = omega
+
+        # d = self.jump_speed ** 2 + 2 * self.gravity * self.jump_speed * self.max_hold_frames
+        # tom = (self.jump_speed + sqrt(d)) / self.gravity + self.max_hold_frames  # time of flight
+        # omega = self.rotations * 90 / tom
+        # self.angle_speed = omega
+
+    def process_event(self, event):
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_SPACE and self.is_floor:
+                self.jump()
+                
+        elif event.type == pg.KEYUP:
+            if event.key == pg.K_SPACE:
+                self.is_holding = False  # Release jump from keyup
+
+
 def main():
     display = Display()
-    display.restart()
+    display.reset()
 
     while True:
-        display.tick()
+        done = display.tick()
+        if done:
+            display.reset()
+        display.render()
         
 if __name__ == "__main__":
     main()
