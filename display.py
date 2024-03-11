@@ -53,7 +53,7 @@ class Display(EndlessRunner):
         pg.quit()
     
     def tick(self):
-        # Process events, tick the game, and update sprites
+        # Process events, tick the game
         self.process_events()
         return super().tick()
         
@@ -70,18 +70,22 @@ class Display(EndlessRunner):
         msg = self.font_big.render(f'{self.deaths} deaths', True, GREY)
         self.screen.blit(msg, (20, 20))
 
+        # Draw FPS
+        msg = self.font_big.render(f'{FPS}', True, GREY)
+        self.screen.blit(msg, (WIDTH // 2, 20))
+
+        self.player.draw_curve(self.screen)
+
         pg.display.flip()
         self.clock.tick(FPS)
     
-    def construct_player(self, pos, size):
-        player = super().construct_player(pos, size)
-        player_sprite = PlayerSprite(player)
-        return player_sprite
+    def construct_player(self):
+        return PlayerSprite()
     
     def construct_platform(self, topleft, width=300, level=0):
-        platform = super().construct_platform(topleft, width, level=level)
+        # platform = super().construct_platform(topleft, width, level=level)
         color = GREEN if level else random_color()
-        platform_sprite = PlatformSprite(platform, color)
+        platform_sprite = PlatformSprite(topleft, width, color, level=level)
         self.sprites.add(platform_sprite)
         return platform_sprite
 
@@ -142,13 +146,13 @@ class Display(EndlessRunner):
 class PlatformSprite(Platform, Sprite):
     font = pg.font.Font(FONT, 50)
 
-    def __init__(self, platform, color):
-        super().__init__(platform.topleft, platform.width, level=platform.is_rest_area)
+    def __init__(self, topleft, width, color, level=0):
+        super().__init__(topleft, width, level=level)
         Sprite.__init__(self)
 
         # self.surface = pg.Surface((platform.width, HEIGHT))
         # t0 = time.time()
-        self.surface = pg.Surface((platform.width, HEIGHT))
+        self.surface = pg.Surface((width, HEIGHT))
         # self.surface = pg.Surface((platform.width, HEIGHT)).convert()
         # self.surface = pg.Surface((platform.width, HEIGHT)).convert_alpha()
         # print(f'Time: {time.time() - t0:.2f}')
@@ -172,12 +176,14 @@ class PlatformSprite(Platform, Sprite):
 
     def update(self, screen : Surface):
         screen.blit(self.surface, (self.x, HEIGHT - self.top))
-
+import numpy as np
 class PlayerSprite(Player, Sprite):
     
-    def __init__(self, player):
+    free_falling = False
+
+    def __init__(self):
         Sprite .__init__(self)
-        super().__init__(player.pos, player.size)
+        super().__init__()
         self.surface = Surface((self.size, self.size)).convert_alpha()
         self.surface.fill(WHITE)        
         # add shade to image
@@ -201,17 +207,19 @@ class PlayerSprite(Player, Sprite):
     
     @property
     def topleft(self):
-        return (self.x, HEIGHT - self.y - self.size)
+        return (self.x - self.size, HEIGHT - self.y - self.size)
 
     def update(self, screen : Surface):
+        # draw rect of player frame
         if self.angle_speed == 0:
             screen.blit(self.surface, self.topleft)
         else:
             self.angle += self.angle_speed
             blit_rotate(screen, self.surface, self.topleft, -self.angle)
+        pg.draw.rect(screen, RED, (*self.topleft, self.size, self.size), 2)
     
-    def fall(self):
-        super().fall()
+    def leave_floor(self):
+        super().leave_floor()
         
         # First phase constant speed
         # h = v_0t_1 
@@ -231,6 +239,35 @@ class PlayerSprite(Player, Sprite):
         # tom = (self.jump_speed + sqrt(d)) / self.gravity + self.max_hold_frames  # time of flight
         # omega = self.rotations * 90 / tom
         # self.angle_speed = omega
+    
+    @Player.is_floor.setter
+    def is_floor(self, value):
+        super(PlayerSprite, PlayerSprite).is_floor.__set__(self, value)
+        if value is True:
+            self.free_falling = False
+    
+
+    def fall(self):
+        """"""
+        self.free_falling = True
+
+    def draw_curve(self, screen : Surface):
+        if self.free_falling is False:
+            return
+
+        g = self.gravity
+        v = self.speed  # Current y-speed
+        h = self.y  # Current height
+        b = 100  # Destination height
+
+        # y = h + vt - 1/2gt^2 = b
+        t2 = (v + sqrt(v**2 + 2 * g * (h - b))) / g  # positive root
+
+        T = np.linspace(0, t2, 300)
+        X = Platform.scroll_speed * T + self.x
+        Y = HEIGHT - (h + v * T - 0.5 * g * T ** 2)
+        for x, y in zip(X, Y):
+            pg.draw.circle(screen, (100, 100, 255), (x, y), 2)
 
     def process_event(self, event):
         if event.type == pg.KEYDOWN:
@@ -238,8 +275,9 @@ class PlayerSprite(Player, Sprite):
                 self.jump()
                 
         elif event.type == pg.KEYUP:
-            if event.key == pg.K_SPACE:
+            if event.key == pg.K_SPACE and not self.is_floor:
                 self.is_holding = False  # Release jump from keyup
+                self.fall()
 
 
 def main():

@@ -65,8 +65,10 @@ if __name__ == '__main__':
     agent = Agent()
     state = env.reset()
     while True:
-        # action = agent.get_action(state)
+        action = agent.get_action(state)
         action = env.action_space.sample()
+        # action = 2
+        # {1 : 0.28, 2 : 0.40, 3 : 0.53}
         state, reward, done, _ = env.step(action)
         if done:
             state = env.reset()

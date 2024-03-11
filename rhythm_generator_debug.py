@@ -75,7 +75,7 @@ class Display():
 
 
 
-def process_events():
+def process_events(level_generator):
     for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
@@ -85,18 +85,18 @@ def process_events():
                     pg.quit()
                     quit()
                 elif event.key == pg.K_RETURN:
-                    return action()
+                    return action(level_generator)
                     
 
 action_count = 1
 def action(level_generator: LevelGenerator):
     global action_count
-    print(f"\nAction {action_count}")
-    res1 = level_generator.get_rhythm(pattern="random")
-    print(f'Rhythm {res1}')
+    print(f"\nAction\t {action_count}")
+    res1 = level_generator._get_rhythm(pattern="random")
+    print(f'Rhythm\t {res1}')
 
-    res2 = level_generator.get_geometry(res1)
-    print(f'Geometry    {res2}')
+    res2 = level_generator._get_geometry(res1)
+    print(f'Geo\t {res2}')
 
     
     action_count += 1
@@ -120,11 +120,11 @@ def main():
     print(f"{SEED=}")
     for _ in range(PRE_ACTIONS):
         rhythm, geometry = action(level_generator)
-        process_events() 
+        process_events(level_generator) 
 
     if display:
         while True:
-            if res := process_events():
+            if res := process_events(level_generator):
                 display.update(*res)
 
 if __name__ == "__main__":

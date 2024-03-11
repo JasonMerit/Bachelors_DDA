@@ -6,6 +6,7 @@ import typing
 
 from rhythm_generator import LevelGenerator
 from config import *
+from util import *
 from entities import Player, Platform
 
 
@@ -20,8 +21,7 @@ class EndlessRunner():
         self.platform_width = 300
 
         # Player
-        self.player_pos = WIDTH // 8, 100
-        self.player : Player = self.construct_player(self.player_pos, size=30)
+        self.player : Player = self.construct_player()
         self.deaths = -1
     
     def reset(self):
@@ -34,26 +34,27 @@ class EndlessRunner():
 
         # Platforms
         self.platforms = []
-        self.current_platform = self.construct_platform(self.player_pos, level=self.level)
+        self.current_platform = self.construct_platform(Player.init_pos, level=self.level)
         self.platforms.append(self.current_platform)
         
-        self.platforms += self.create_level()
-        self.platforms += self.create_level()
+        self.platforms += self._create_level()
+        self.platforms += self._create_level()
         
 
     def tick(self):
-        self.update_positions()
-        self.current_platform = self.platform_transition(self.current_platform)
+        self._update_positions()
+
+        self.current_platform = self._platform_transition(self.current_platform)
         if self.current_platform is False:
             return True  # Terminated
         
-        if self.floor_collision(self.current_platform) is False:
+        if self._floor_collision(self.current_platform) is False:
             return True  # Terminated
         
-        self.score += 1
+        self.score += 1  # Increase score every tick
         return False  # Terminated (replace all self.restart() with return True)
     
-    def update_positions(self):
+    def _update_positions(self):
         """Update player and platforms positions. Also remove off screen platform."""
         self.player.move()
 
@@ -63,9 +64,10 @@ class EndlessRunner():
         if self.platforms[0].right < 0:
             self.remove_platform()
 
-    def platform_transition(self, platform : Platform):
+    def _platform_transition(self, platform : Platform):
         """Check if player is leaving current platform and reaching new platform.
         Also checks for wall collision when reaching new platform.
+        Assumes next platform is reached, before current platform is popped.
 
         :param platform: current platform
         :return: new platform
@@ -74,11 +76,11 @@ class EndlessRunner():
         # Leaving current platform
         if platform and self.player.right > platform.right + 20:  # Grace
             platform = None
-            self.player.fall()  # Let player fall
+            if self.player.is_floor:
+                self.player.leave_floor()  # Let player fall
+                
 
         # Reaching new platform 
-        # ASSUMPTION A Leaving current platform assumes next platform is platforms[1]
-            # this seems guraranteed currently?
         if platform is None and self.player.right > self.platforms[1].left:
             platform = self.platforms[1]
 
@@ -91,11 +93,12 @@ class EndlessRunner():
             
             # Generate next level upon completing current level
             if platform.is_rest_area:
-                self.platforms += self.create_level()
-
+                self.platforms += self._create_level()
+        # if platform != self.current_platform:
+        #     print(platform)
         return platform
 
-    def floor_collision(self, platform : Platform):
+    def _floor_collision(self, platform : Platform):
         """Floor collision with platform and obstacle collision with player.
         Also checks for off screen death.
 
@@ -116,7 +119,7 @@ class EndlessRunner():
                 self.player.y = HEIGHT
 
 
-    def create_level(self, count=3):
+    def _create_level(self, count=3):
         """Create a new level of platforms and rest area.
         :param count: number of platforms in the level
         :return: list of platforms
@@ -141,23 +144,31 @@ class EndlessRunner():
         
 
         # Geometry: [(4.0, 0.5), (8.0, 0.25), (12.0, 0.75), (16.0, 0.75)]
-        geometry = self.level_generator.generate()
-        start = self.platforms[-1].right
-        unit = 100
-        stamp_prev = 0
-        for geo in geometry:
-            stamp, hold = geo
-            width = (stamp - stamp_prev) * unit
-            topleft = (start + hold * unit, self.player_pos[1])
-            platform = self.construct_platform(topleft, width)
+        # geometry = self.level_generator.generate()
+        # start = self.platforms[-1].right
+        # unit = 300
+        # stamp_prev = 0
+        # for geo in geometry:
+        #     stamp, hold = geo
+        #     width = (stamp - stamp_prev) * unit
+        #     topleft = (start + hold * unit, self.player_pos[1])
+        #     platform = self.construct_platform(topleft, width)
 
-            print(topleft, width)
-            platforms.append(platform)
-            start = platform.right
-            stamp_prev = stamp
+        #     print(topleft, width)
+        #     platforms.append(platform)
+        #     start = platform.right
+        #     stamp_prev = stamp + hold
 
-        topleft = platforms[-1].topright
-        platforms.append(self.construct_platform(topleft, level=self.level))
+        # topleft = platforms[-1].topright
+        # platforms.append(self.construct_platform(topleft, level=self.level))
+        
+        topright = self.platforms[-1].topright
+        for _ in range(count):
+            platforms.append(self.construct_platform(topright))
+            topright = platforms[-1].topright
+        # topleft = platforms[-1].topright
+        platforms.append(self.construct_platform(topright, level=self.level))
+
         return platforms
 
     def _get_next_position(self, x, y):
@@ -195,8 +206,8 @@ class EndlessRunner():
         if self.player.is_floor:
             self.player.jump(action)
 
-    def construct_player(self, pos, size):
-        return Player(pos, size)
+    def construct_player(self):
+        return Player()
     
     def construct_platform(self, topleft, width=300, level=0):
         return Platform(topleft, width, level=level)
