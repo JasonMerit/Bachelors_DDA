@@ -2,7 +2,7 @@ import pygame as pg
 from pygame.color import Color
 from pygame.surface import Surface
 from pygame.sprite import Sprite, Group
-import random, os, time
+import random, os, time, math
 
 from endless_runner import EndlessRunner, Platform, Player
 from config import *
@@ -39,7 +39,7 @@ class Display(EndlessRunner):
     font_big = pg.font.Font(FONT, 50)
     # font_big = pg.font.Font("ROCK.TTF", 50)
     # font_style_small = pg.font.SysFont(None, 20)
- 
+    
     def __init__(self):
         self.sprites = Group()
         super().__init__()
@@ -73,8 +73,12 @@ class Display(EndlessRunner):
         # Draw FPS
         msg = self.font_big.render(f'{FPS}', True, GREY)
         self.screen.blit(msg, (WIDTH // 2, 20))
+        
+        # Draw player trajectory
+        self.player.draw_curve(self.screen, self.platforms[:2])
 
-        self.player.draw_curve(self.screen)
+        # Draw debugger stuff
+
 
         pg.display.flip()
         self.clock.tick(FPS)
@@ -112,15 +116,16 @@ class Display(EndlessRunner):
                     path = "assets/screenshots"
                     pg.image.save(self.screen, f"{path}/{len(os.listdir(path))}.png")
                 elif event.key == pg.K_DOWN:
-                    
-                    FPS -= 30
-                    FPS = max(30, FPS)
+                    # get magnitude of current fps
+                    k = 10 ** int(math.floor(math.log10(abs(FPS - 1))))
+                    FPS -= k
+                    FPS = max(1, FPS)
                     # change screen caption
                     pg.display.set_caption(f"Canabalt - {FPS}")
                 elif event.key == pg.K_UP:
-                    
-                    FPS += 30
-                    FPS = min(30*100, FPS)
+                    k = 10 ** int(math.floor(math.log10(abs(FPS))))
+                    FPS += k
+                    FPS = min(10000, FPS)
                     pg.display.set_caption(f"Canabalt - {FPS}")
                 # elif event.key == pg.K_RETURN:
                 #     print()
@@ -176,22 +181,24 @@ class PlatformSprite(Platform, Sprite):
 
     def update(self, screen : Surface):
         screen.blit(self.surface, (self.x, HEIGHT - self.top))
+    
+    def outline(self):
+        pg.draw.rect(self.surface, RED, self.rect, 2, 10)
+
 import numpy as np
 class PlayerSprite(Player, Sprite):
     
-    free_falling = False
-
     def __init__(self):
         Sprite .__init__(self)
         super().__init__()
         self.surface = Surface((self.size, self.size)).convert_alpha()
         self.surface.fill(WHITE)        
+        
         # add shade to image
-
         shade = (0, 0, 0, 100)
         line_width = self.size // 8
         
-        # horinzontal
+        # Horizontal
         shadow = Surface((self.size, line_width)).convert_alpha()
         shadow.fill(shade)
         self.surface.blit(shadow, (0, 0))
@@ -203,14 +210,12 @@ class PlayerSprite(Player, Sprite):
         self.surface.blit(shadow, (0, line_width))
         self.surface.blit(shadow, (self.size - line_width, line_width))
 
-        # self.rect.bottomleft = self.pos[0], HEIGHT - self.pos[1] - self.size
     
     @property
     def topleft(self):
         return (self.x - self.size, HEIGHT - self.y - self.size)
 
     def update(self, screen : Surface):
-        # draw rect of player frame
         if self.angle_speed == 0:
             screen.blit(self.surface, self.topleft)
         else:
@@ -218,9 +223,7 @@ class PlayerSprite(Player, Sprite):
             blit_rotate(screen, self.surface, self.topleft, -self.angle)
         pg.draw.rect(screen, RED, (*self.topleft, self.size, self.size), 2)
     
-    def leave_floor(self):
-        super().leave_floor()
-        
+    def _compute_omega(self):
         # First phase constant speed
         # h = v_0t_1 
         v, t1 = self.jump_speed, self.max_hold_frames
@@ -239,35 +242,42 @@ class PlayerSprite(Player, Sprite):
         # tom = (self.jump_speed + sqrt(d)) / self.gravity + self.max_hold_frames  # time of flight
         # omega = self.rotations * 90 / tom
         # self.angle_speed = omega
-    
-    @Player.is_floor.setter
-    def is_floor(self, value):
-        super(PlayerSprite, PlayerSprite).is_floor.__set__(self, value)
-        if value is True:
-            self.free_falling = False
-    
 
-    def fall(self):
-        """"""
-        self.free_falling = True
-
-    def draw_curve(self, screen : Surface):
-        if self.free_falling is False:
+    def draw_curve(self, screen : Surface, platforms : list):
+        if self.is_floor is True:
             return
 
         g = self.gravity
         v = self.speed  # Current y-speed
         h = self.y  # Current height
-        b = 100  # Destination height
 
-        # y = h + vt - 1/2gt^2 = b
-        t2 = (v + sqrt(v**2 + 2 * g * (h - b))) / g  # positive root
+        ### y(t) = h + vt - 1/2gt^2 = b
+        b0 = platforms[0].top  # Destination height
+        d = v**2 + 2 * g * (h - b0)
+        if d > 0:
+            t = (v + sqrt(d)) / g  # Can always reach current platform 
 
-        T = np.linspace(0, t2, 300)
-        X = Platform.scroll_speed * T + self.x
-        Y = HEIGHT - (h + v * T - 0.5 * g * T ** 2)
-        for x, y in zip(X, Y):
-            pg.draw.circle(screen, (100, 100, 255), (x, y), 2)
+        # Maybe next platform will be reached
+        b1 = platforms[1].top  
+        d = v**2 + 2 * g * (h - b1) 
+        if d > 0:
+            t1 = (v + sqrt(d)) / g  # positive root
+            if self.x + t1 * Platform.scroll_speed >= self.platforms[1].left:  # If player reaches the next platform
+                t = t1
+        try:
+            T = np.linspace(0, t, 300)
+            X = Platform.scroll_speed * T + self.x
+            Y = HEIGHT - (h + v * T - 0.5 * g * T ** 2)
+            for x, y in zip(X, Y):
+                pg.draw.circle(screen, BLUE, (x, y), 2)
+        except UnboundLocalError:  # If fell without jumping
+            pass
+    
+    def change_color(self, is_floor: bool):
+        if is_floor:
+            self.surface.fill(WHITE)
+        else:
+            self.surface.fill(BLUE)
 
     def process_event(self, event):
         if event.type == pg.KEYDOWN:
@@ -277,9 +287,10 @@ class PlayerSprite(Player, Sprite):
         elif event.type == pg.KEYUP:
             if event.key == pg.K_SPACE and not self.is_floor:
                 self.is_holding = False  # Release jump from keyup
-                self.fall()
+                # if self.is_falling is False:
+                #     self._fall()
 
-
+import time
 def main():
     display = Display()
     display.reset()
@@ -287,6 +298,9 @@ def main():
     while True:
         done = display.tick()
         if done:
+            display.render()
+            print("RESETTING")
+            time.sleep(1)
             display.reset()
         display.render()
         

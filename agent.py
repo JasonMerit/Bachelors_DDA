@@ -6,8 +6,9 @@ class Agent():
     def get_action(self, state):
         action = 0
         is_floor, x1, y1, x2, y2 = state
-        
-        if not is_floor or x1 >= 130:  # Jump if not on floor or close to the edge
+        # if is_floor is False:
+        #     print("Not on floor")
+        if not is_floor or x1 >= 105:  # Jump if not on floor or close to the edge
             return action
         
         dx, dy = x2 - x1, y2 - y1

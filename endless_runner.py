@@ -14,13 +14,13 @@ class EndlessRunner():
 
     def __init__(self):
         self.level_generator = LevelGenerator()
-        self.platforms = []  # List of platforms that are moved every tick
         self.max_height, self.min_height = HEIGHT - 100, 100
         self.min_gap = 50
         self.rest_width = 300 if not FLAT else 100000
         self.platform_width = 300
 
         # Player
+        Player.init_pos = Player.init_pos[0], HEIGHT//2
         self.player : Player = self.construct_player()
         self.deaths = -1
     
@@ -32,92 +32,42 @@ class EndlessRunner():
         # Player
         self.player.reset()
 
-        # Platforms
-        self.platforms = []
-        self.current_platform = self.construct_platform(Player.init_pos, level=self.level)
-        self.platforms.append(self.current_platform)
+        # List of platforms that are moved every tick
+        self.platforms = [self.construct_platform(Player.init_pos, level=self.level)]  
         
         self.platforms += self._create_level()
         self.platforms += self._create_level()
         
+        self.player.platforms = self.platforms  # Dirty coupling
+        self.player.current_platform = self.platforms[0]  # Dirty coupling
+        self.player.next_platform = self.platforms[1]  # Dirty coupling
 
     def tick(self):
         self._update_positions()
 
-        self.current_platform = self._platform_transition(self.current_platform)
-        if self.current_platform is False:
-            return True  # Terminated
-        
-        if self._floor_collision(self.current_platform) is False:
+        if self.player.tick() is True:
             return True  # Terminated
         
         self.score += 1  # Increase score every tick
         return False  # Terminated (replace all self.restart() with return True)
+
+    def render(self):
+        pass  # Implemented in Display
     
     def _update_positions(self):
         """Update player and platforms positions. Also remove off screen platform."""
-        self.player.move()
 
         for platform in self.platforms:
             platform.move()
         
         if self.platforms[0].right < 0:
-            self.remove_platform()
-
-    def _platform_transition(self, platform : Platform):
-        """Check if player is leaving current platform and reaching new platform.
-        Also checks for wall collision when reaching new platform.
-        Assumes next platform is reached, before current platform is popped.
-
-        :param platform: current platform
-        :return: new platform
-        """
-
-        # Leaving current platform
-        if platform and self.player.right > platform.right + 20:  # Grace
-            platform = None
-            if self.player.is_floor:
-                self.player.leave_floor()  # Let player fall
-                
-
-        # Reaching new platform 
-        if platform is None and self.player.right > self.platforms[1].left:
-            platform = self.platforms[1]
-
-            # Wall collision
-            if self.player.y < platform.top - 30:  # 30 Grace
-                if not GOD:
-                    return False
-                self.player.y = platform.top  # Assuming flat surface
+            if VERBOSE:
+                print("Removing", self.platforms[0])
             
-            
-            # Generate next level upon completing current level
-            if platform.is_rest_area:
+            if self.platforms[0].is_rest_area:
                 self.platforms += self._create_level()
-        # if platform != self.current_platform:
-        #     print(platform)
-        return platform
-
-    def _floor_collision(self, platform : Platform):
-        """Floor collision with platform and obstacle collision with player.
-        Also checks for off screen death.
-
-        :param platform: current platform
-        """
-        if platform:
-            self.player.floor_collision(self.current_platform.top)
-
-            # Check for obstacle collision
-            # if not GOD and pg.sprite.spritecollide(self.player, self.obstacle_sprites, False):
-            #     self.restart()
-            #     return
-        else:
-            # Check for off screen
-            if self.player.y < 0:
-                if not GOD:
-                    return False
-                self.player.y = HEIGHT
-
+                
+            self.remove_platform()
 
     def _create_level(self, count=3):
         """Create a new level of platforms and rest area.
@@ -200,12 +150,17 @@ class EndlessRunner():
         # max_x = int(self.player.fly_time(new_y - max_y) * self.scroll_speed * 0.7)  # 0.7 grace
         # new_x = x + random.randrange(self.min_gap, max_x)
         
+        # return 1000, new_y
+        if TOUCHING:
+            return x, new_y
         return new_x, new_y
     
     def jump(self, action):
         if self.player.is_floor:
             self.player.jump(action)
 
+
+    ### ===== Inherited by Display ===== ###
     def construct_player(self):
         return Player()
     
