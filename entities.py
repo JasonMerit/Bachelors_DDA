@@ -38,7 +38,7 @@ class Platform():
     def move(self):
         self.x -= self.scroll_speed
     
-    def outline(self):
+    def outline(self, invert=False):
         pass # for debugging
 
     # def __eq__(self, other):
@@ -165,11 +165,14 @@ class Player():
                 self.y = HEIGHT
     
     def collision(self):
+        """Check for collision with platforms and obstacles.
+        Mutates current_platform and next_platform."""
         platform = self.current_platform
 
         # Leaving current platform
         if platform and self.left > platform.right:  
-            self.next_platform = self.platforms[self.platforms.index(platform) + 1]
+            # self.next_platform = self.platforms[self.platforms.index(platform) + 1]
+            platform.outline(True)
             platform = None
             if self.is_floor is True:  # May already be jumping
                 self.is_floor = False  
@@ -183,7 +186,7 @@ class Player():
                 if self.is_floor is True:  # May already be jumping
                     self.is_floor = False
             
-            else:  # Perhaps still on the same platform __|  | case
+            else: # Player still atop of a platform: __|  | case
                 if self._collide_with(self.next_platform) is True:
                     return True
         

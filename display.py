@@ -177,13 +177,24 @@ class PlatformSprite(Platform, Sprite):
             x = (msg.get_width() - self.width // 4) / 2  
             y = (self.top - msg.get_height()) / 2
             self.surface.blit(msg, (x, y))
+
+        # Copy surface and add red outline
+        self.outline_surface = self.surface.copy()
+        pg.draw.rect(self.outline_surface, RED, self.rect, 2, 10)
+
             
 
     def update(self, screen : Surface):
         screen.blit(self.surface, (self.x, HEIGHT - self.top))
     
-    def outline(self):
-        pg.draw.rect(self.surface, RED, self.rect, 2, 10)
+    def outline(self, invert=False):
+        if invert:
+            self.surface = self.outline_surface
+        else:
+            temp = self.surface
+            self.surface = self.outline_surface
+            self.outline_surface = temp
+
 
 import numpy as np
 class PlayerSprite(Player, Sprite):

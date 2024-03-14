@@ -34,6 +34,7 @@ class EndlessRunner():
 
         # List of platforms that are moved every tick
         self.platforms = [self.construct_platform(Player.init_pos, level=self.level)]  
+        self.platforms[0].outline() # debug
         
         self.platforms += self._create_level()
         self.platforms += self._create_level()
