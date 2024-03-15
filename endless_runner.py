@@ -68,6 +68,7 @@ class EndlessRunner():
             if self.platforms[0].is_rest_area:
                 self.platforms += self._create_level()
                 
+                
             self.remove_platform()
 
     def _create_level(self, count=3):
@@ -75,87 +76,17 @@ class EndlessRunner():
         :param count: number of platforms in the level
         :return: list of platforms
         """
-        
         self.level += 1
-        platforms = []
+        start = self.platforms[-1].topright
+        platforms = self.level_generator.get_level(start, count)
+        res = []
+        for plat in platforms[:-1]:
+            topleft, width = plat
+            res.append(self.construct_platform(topleft, width))
+        res.append(self.construct_platform(*platforms[-1], level=self.level))
+        return res
         
-        # if self.level_generator is None:
-        if not GAME:
-            topright = self.platforms[-1].topright
-            for _ in range(count):
-                topleft = self._get_next_position(*topright)
-                platforms.append(self.construct_platform(topleft))
-                
-                topright = platforms[-1].topright
-                
-            # Append rest area
-            topleft = platforms[-1].topright
-            platforms.append(self.construct_platform(topleft, level=self.level))
-            return platforms
         
-
-        # Geometry: [(4.0, 0.5), (8.0, 0.25), (12.0, 0.75), (16.0, 0.75)]
-        # geometry = self.level_generator.generate()
-        # start = self.platforms[-1].right
-        # unit = 300
-        # stamp_prev = 0
-        # for geo in geometry:
-        #     stamp, hold = geo
-        #     width = (stamp - stamp_prev) * unit
-        #     topleft = (start + hold * unit, self.player_pos[1])
-        #     platform = self.construct_platform(topleft, width)
-
-        #     print(topleft, width)
-        #     platforms.append(platform)
-        #     start = platform.right
-        #     stamp_prev = stamp + hold
-
-        # topleft = platforms[-1].topright
-        # platforms.append(self.construct_platform(topleft, level=self.level))
-        
-        topright = self.platforms[-1].topright
-        for _ in range(count):
-            platforms.append(self.construct_platform(topright))
-            topright = platforms[-1].topright
-        # topleft = platforms[-1].topright
-        platforms.append(self.construct_platform(topright, level=self.level))
-
-        return platforms
-
-    def _get_next_position(self, x, y):
-        """
-        :param x, y: top right of previous platform
-        :return: x, y: top left of next platform
-        """
-        # max_jump_height = jump_speed * max_hold_frames + 0.5 * jump_speed ** 2 / gravity
-        # up_time = jump_speed / gravity + max_hold_frames  # Increasing position time
-        # fly_time = lambda self, delta_y: self.up_time + sqrt(2 * delta_y / self.gravity)
-        
-        v = self.player.jump_speed
-        t1 = self.player.max_hold_frames
-        h = v * t1
-
-        g = self.player.gravity
-        t2 = (v + sqrt(v ** 2 + 2*g*h)) / g
-
-        max_y = min(int(y + 0.7 * h), self.max_height)  # 0.7 grace
-        new_y = random.randrange(self.min_height, max_y)
-
-        t = t1 + t2
-        max_x = int(t * Platform.scroll_speed * 0.7)  # 0.7 grace
-        new_x = x + random.randrange(self.min_gap, max_x)
-        # print(f'---- {self.level} ----')
-        # max_y = min(int(y + 0.7 * self.player.max_jump_height), self.max_height)  # 0.7 grace
-        # new_y = random.randrange(self.min_height, max_y)
-
-        # max_x = int(self.player.fly_time(new_y - max_y) * self.scroll_speed * 0.7)  # 0.7 grace
-        # new_x = x + random.randrange(self.min_gap, max_x)
-        
-        # return 1000, new_y
-        if TOUCHING:
-            return x, new_y
-        return new_x, new_y
-    
     def jump(self, action):
         if self.player.is_floor:
             self.player.jump(action)

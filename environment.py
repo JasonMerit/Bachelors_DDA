@@ -59,8 +59,7 @@ class EndlessRunnerEnv(gym.Env):
         topleft = plat2.topleft
         return self.game.player.is_floor, topright[0], topright[1], topleft[0], topleft[1]
 
-
-if __name__ == '__main__':
+def main():
     env = EndlessRunnerEnv(render=True)
     agent = Agent()
     state = env.reset()
@@ -71,5 +70,7 @@ if __name__ == '__main__':
         if done:
             state = env.reset()
         env.render()
+
+if __name__ == '__main__':
+    main()
         
-    env.close()

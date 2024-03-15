@@ -15,6 +15,9 @@ class Agent():
         if dx == dy == 0:  # Next platform is connected
             return action
         
+        if dy > 0:
+            return 3
+
         # Action function
         f = dy + dx // 2
 

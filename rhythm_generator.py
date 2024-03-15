@@ -1,5 +1,7 @@
+from typing import Tuple
 import numpy as np
 import random
+from math import sqrt
 
 from config import *
 from entities import Player, Platform
@@ -14,12 +16,57 @@ class LevelGenerator():
     size = Player.size
     speed = Platform.scroll_speed
     jump_speed = Player.jump_speed
+    max_hold_frames = Player.max_hold_frames
     gravity = Player.gravity   
+
+    max_height, min_height = HEIGHT - 100, 100
+    min_gap = 50
 
     air_times = [42, Player.max_hold_frames, Player.max_hold_frames // 2, 0]  # 42 is for no jump, but index is never 0
 
     def __init__(self):
         pass
+
+    def get_level(self, start: Tuple[int, int], count: int):
+        """Returns a level with a given number of platforms.
+        :param start: x, y: top right of first platform.
+        :param: count: Number of platforms.
+        :return: A list of doubles (start, width).
+        """
+        platforms = []
+        topright = start
+        width = 300
+        for _ in range(count):
+            topleft = self._get_next_position(*topright)
+            platforms.append((topleft, width))
+            
+            topright = topleft[0] + width, topleft[1]
+            
+        # Append rest area
+        topleft = topleft[0] + width, topleft[1]
+        platforms.append((topleft, width))
+        return platforms
+
+    def _get_next_position(self, x, y):
+        """
+        :param x, y: top right of previous platform
+        :return: x, y: top left of next platform
+        """
+        v = self.jump_speed
+        t1 = self.max_hold_frames
+        h = v * t1
+
+        g = self.gravity
+        t2 = (v + sqrt(v ** 2 + 2*g*h)) / g
+
+        max_y = min(int(y + 0.7 * h), self.max_height)  # 0.7 grace
+        new_y = random.randrange(self.min_height, max_y)
+
+        t = t1 + t2
+        max_x = int(t * Platform.scroll_speed * 0.7)  # 0.7 grace
+        new_x = x + random.randrange(self.min_gap, max_x)
+
+        return new_x, new_y
 
     def generate(self):
         """Returns the geometry of a level"""
