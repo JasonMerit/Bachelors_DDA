@@ -2,7 +2,7 @@ import pygame as pg
 import numpy as np
 import random
 
-from config import *
+from Bachelors_DDA.Game.config import *
 from rhythm_generator import LevelGenerator
 
 random.seed(SEED)

@@ -3,11 +3,11 @@ import numpy as np
 import random
 from math import sqrt
 
-from config import *
-from entities import Player, Platform
+from game.config import Config
+from game.entities import Player, Platform
 
-random.seed(SEED)
-np.random.seed(SEED)
+random.seed(Config.SEED)
+np.random.seed(Config.SEED)
 
 class LevelGenerator():
     """Generates levels for the endless runner"""
@@ -19,7 +19,7 @@ class LevelGenerator():
     max_hold_frames = Player.max_hold_frames
     gravity = Player.gravity   
 
-    max_height, min_height = HEIGHT - 100, 100
+    max_height, min_height = Config.HEIGHT - 100, 100
     min_gap = 50
 
     air_times = [42, Player.max_hold_frames, Player.max_hold_frames // 2, 0]  # 42 is for no jump, but index is never 0
@@ -73,7 +73,7 @@ class LevelGenerator():
         rhythm = self._get_rhythm()
         return self._get_geometry(rhythm)
 
-    def _get_rhythm(self, density = DENSITY, duration = DURATION, pattern = "random"):
+    def _get_rhythm(self, density = Config.DENSITY, duration = Config.DURATION, pattern = "random"):
         """Returns a rhythm of hatches. Rhythms are not constrained in any way.
         :param density: Number of hatches
         :param duration: Duration of the rhythm
@@ -85,7 +85,7 @@ class LevelGenerator():
             hatches = [i * x for i in range(1, density + 1)]
 
         elif pattern == "random":    
-            hatches = random.sample(np.arange(UNIT, duration, 0.25).tolist(), density)
+            hatches = random.sample(np.arange(Config.UNIT, duration, 0.25).tolist(), density)
             # hatches = [random.randint(0, duration / UNIT ) * UNIT for _ in range(density)]
 
 
@@ -106,7 +106,7 @@ class LevelGenerator():
         geometry = [jumps[0]]
         for jump in jumps[1:]: 
             # start time of next jump > end time of previous jump + hold_down time + unit
-            if jump[0] > geometry[-1][0] + geometry[-1][1] + UNIT: # 1.0 > 0.25 + 0.25 + 0.75 = 1.25
+            if jump[0] > geometry[-1][0] + geometry[-1][1] + Config.UNIT: # 1.0 > 0.25 + 0.25 + 0.75 = 1.25
                 geometry.append((jump))
         
         return geometry

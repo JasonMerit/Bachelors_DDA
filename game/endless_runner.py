@@ -4,23 +4,23 @@ from math import sqrt
 import typing
 
 
-from rhythm_generator import LevelGenerator
-from config import *
-from util import *
-from entities import Player, Platform
+from game.rhythm_generator import LevelGenerator
+from game.config import Config
+from game.util import *
+from game.entities import Player, Platform
 
 
 class EndlessRunner():
 
     def __init__(self):
         self.level_generator = LevelGenerator()
-        self.max_height, self.min_height = HEIGHT - 100, 100
+        self.max_height, self.min_height = Config.HEIGHT - 100, 100
         self.min_gap = 50
-        self.rest_width = 300 if not FLAT else 100000
+        self.rest_width = 300 if not Config.FLAT else 100000
         self.platform_width = 300
 
         # Player
-        Player.init_pos = Player.init_pos[0], HEIGHT//2
+        Player.init_pos = Player.init_pos[0], Config.HEIGHT//2
         self.player : Player = self.construct_player()
         self.deaths = -1
     
@@ -62,12 +62,11 @@ class EndlessRunner():
             platform.move()
         
         if self.platforms[0].right < 0:
-            if VERBOSE:
+            if Config.VERBOSE:
                 print("Removing", self.platforms[0])
             
             if self.platforms[0].is_rest_area:
                 self.platforms += self._create_level()
-                
                 
             self.remove_platform()
 
@@ -86,11 +85,19 @@ class EndlessRunner():
         res.append(self.construct_platform(*platforms[-1], level=self.level))
         return res
         
-        
-    def jump(self, action):
+    ### ===== Player methods ===== ###
+    def jump(self):
         if self.player.is_floor:
-            self.player.jump(action)
+            self.player.jump()
+    
+    def jump_release(self):
+        if not self.player.is_floor:
+            self.player.jump_release()
 
+    ### ===== Agent methods ===== ###
+    def take_action(self, action):
+        if self.player.is_floor and action != 0:
+            self.player.jump(action)
 
     ### ===== Inherited by Display ===== ###
     def construct_player(self):
@@ -106,7 +113,7 @@ class EndlessRunner():
 def main():
     game = EndlessRunner()
     game.reset()
-    for _ in range(PRE_ACTIONS):
+    for _ in range(Config.PRE_ACTIONS):
         done = game.tick()
         if done:
             game.reset()

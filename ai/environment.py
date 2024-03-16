@@ -1,18 +1,15 @@
 import gym
 from gym import spaces
-import numpy as np
 
-from endless_runner import EndlessRunner
-from display import Display
-from agent import Agent
+from ai.agent import Agent
 
 class EndlessRunnerEnv(gym.Env):
     """The purpose of the environment is to provide a standard interface for the 
     agent to interact with the game. Display enherits from EndlessRunner, so it
     can be used to run the game with rendering."""
 
-    def __init__(self, render=False):
-        self.game = Display() if render else EndlessRunner()
+    def __init__(self, game):
+        self.game = game
         
         self.action_space = spaces.Discrete(4)
         # self.observation_space = spaces.Discrete(1)
@@ -24,7 +21,7 @@ class EndlessRunnerEnv(gym.Env):
         1-3: Jump ranges from short to long
         """
         if action:
-            self.game.jump(action)
+            self.game.take_action(action)
 
         terminated = self.game.tick()  # Remember truncation
         reward = 1 if not terminated else -1
@@ -38,8 +35,7 @@ class EndlessRunnerEnv(gym.Env):
         self.game.render()
     
     def close(self):
-        if self.game is Display:
-            self.game.close()
+        self.game.close()
 
     def _state(self):
         """Return the state consisting of the tuple
@@ -60,7 +56,7 @@ class EndlessRunnerEnv(gym.Env):
         return self.game.player.is_floor, topright[0], topright[1], topleft[0], topleft[1]
 
 def main():
-    env = EndlessRunnerEnv(render=True)
+    env = EndlessRunnerEnv()
     agent = Agent()
     state = env.reset()
     while True:

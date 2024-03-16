@@ -4,8 +4,8 @@ from pygame.surface import Surface
 from pygame.sprite import Sprite, Group
 import random, os, time, math
 
-from endless_runner import EndlessRunner, Platform, Player
-from config import *
+from game.endless_runner import EndlessRunner, Platform, Player
+from game.config import Config
 
 from math import sqrt
 
@@ -30,7 +30,7 @@ def lerp_color(color1, color2, t):
 class Display(EndlessRunner):
     pg.init()
 
-    screen = pg.display.set_mode((WIDTH, HEIGHT))
+    screen = pg.display.set_mode((Config.WIDTH, Config.HEIGHT))
     pg.display.set_caption("Runner")
 
     clock = pg.time.Clock()
@@ -52,27 +52,22 @@ class Display(EndlessRunner):
     def close(self):
         pg.quit()
     
-    def tick(self):
-        # Process events, tick the game
-        self.process_events()
-        return super().tick()
-        
     def render(self):
-        self.screen.fill(BLACK)
+        self.screen.fill(Config.BLACK)
         self.sprites.update(self.screen)
         
         # Draw score
         self.score += 1
-        msg = self.font_big.render(f'{self.score} m', True, GREY)
-        self.screen.blit(msg, (WIDTH - msg.get_width() - 20, 20))
+        msg = self.font_big.render(f'{self.score} m', True, Config.GREY)
+        self.screen.blit(msg, (Config.WIDTH - msg.get_width() - 20, 20))
 
         # Draw death count
-        msg = self.font_big.render(f'{self.deaths} deaths', True, GREY)
+        msg = self.font_big.render(f'{self.deaths} deaths', True, Config.GREY)
         self.screen.blit(msg, (20, 20))
 
         # Draw FPS
-        msg = self.font_big.render(f'{FPS}', True, GREY)
-        self.screen.blit(msg, (WIDTH // 2, 20))
+        msg = self.font_big.render(f'{Config.FPS}', True, Config.GREY)
+        self.screen.blit(msg, (Config.WIDTH // 2, 20))
         
         # Draw player trajectory
         self.player.draw_curve(self.screen, self.platforms[:2])
@@ -81,14 +76,14 @@ class Display(EndlessRunner):
 
 
         pg.display.flip()
-        self.clock.tick(FPS)
+        self.clock.tick(Config.FPS)
     
     def construct_player(self):
         return PlayerSprite()
     
     def construct_platform(self, topleft, width=300, level=0):
         # platform = super().construct_platform(topleft, width, level=level)
-        color = GREEN if level else random_color()
+        color = Config.GREEN if level else random_color()
         platform_sprite = PlatformSprite(topleft, width, color, level=level)
         self.sprites.add(platform_sprite)
         return platform_sprite
@@ -97,56 +92,6 @@ class Display(EndlessRunner):
         platform = self.platforms.pop(0)
         self.sprites.remove(platform)
 
-    def process_events(self):
-        global FPS
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-                quit()
-            elif event.type == pg.KEYDOWN:
-                if event.key == pg.K_ESCAPE:
-                    pg.quit()
-                    quit()
-                if event.key == pg.K_r:
-                    self.reset()
-                elif event.key == pg.K_RETURN:
-                    Platform.scroll_speed += 1
-
-                elif event.key == pg.K_s and pg.key.get_mods() & pg.KMOD_CTRL:
-                    path = "assets/screenshots"
-                    pg.image.save(self.screen, f"{path}/{len(os.listdir(path))}.png")
-                elif event.key == pg.K_DOWN:
-                    # get magnitude of current fps
-                    k = 10 ** int(math.floor(math.log10(abs(FPS - 1))))
-                    FPS -= k
-                    FPS = max(1, FPS)
-                    # change screen caption
-                    pg.display.set_caption(f"Canabalt - {FPS}")
-                elif event.key == pg.K_UP:
-                    k = 10 ** int(math.floor(math.log10(abs(FPS))))
-                    FPS += k
-                    FPS = min(10000, FPS)
-                    pg.display.set_caption(f"Canabalt - {FPS}")
-                # elif event.key == pg.K_RETURN:
-                #     print()
-                #     for platform in self.platforms:
-                #         print(platform)
-                elif event.key == pg.K_p:
-                    paused = True
-                    while paused:
-                        for event in pg.event.get():
-                            if event.type == pg.QUIT:
-                                pg.quit()
-                                quit()
-                            elif event.type == pg.KEYDOWN:
-                                if event.key == pg.K_ESCAPE:
-                                    pg.quit()
-                                    quit()
-                                if event.key == pg.K_p:
-                                    paused = False
-            
-            self.player.process_event(event)
-            # |-|--|--|-|- rhythm 
 
 class PlatformSprite(Platform, Sprite):
     font = pg.font.Font(FONT, 50)
@@ -157,14 +102,14 @@ class PlatformSprite(Platform, Sprite):
 
         # self.surface = pg.Surface((platform.width, HEIGHT))
         # t0 = time.time()
-        self.surface = pg.Surface((width, HEIGHT))
+        self.surface = pg.Surface((width, Config.HEIGHT))
         # self.surface = pg.Surface((platform.width, HEIGHT)).convert()
         # self.surface = pg.Surface((platform.width, HEIGHT)).convert_alpha()
         # print(f'Time: {time.time() - t0:.2f}')
         self.rect = self.surface.get_rect()
         self.surface.set_colorkey((0, 0, 0))
-        pg.draw.rect(self.surface, WHITE, self.rect, 0, 10)
-        shade_color = lerp_color(color, WHITE, 0.4)
+        pg.draw.rect(self.surface, Config.WHITE, self.rect, 0, 10)
+        shade_color = lerp_color(color, Config.WHITE, 0.4)
         pg.draw.rect(self.surface, shade_color, self.rect, 15, 10)
         # pg.draw.rect(self.surface, SHADE, self.rect, 15, 10)
 
@@ -173,19 +118,19 @@ class PlatformSprite(Platform, Sprite):
         if self.is_rest_area:
             # font = pg.font.Font("ROCK.TTF", 50)
             # font = pg.font.SysFont("rockwell", 50)
-            msg = self.font.render(f"LEVEL {self.is_rest_area}", True, GREY)
+            msg = self.font.render(f"LEVEL {self.is_rest_area}", True, Config.GREY)
             x = (msg.get_width() - self.width // 4) / 2  
             y = (self.top - msg.get_height()) / 2
             self.surface.blit(msg, (x, y))
 
         # Copy surface and add red outline
         self.outline_surface = self.surface.copy()
-        pg.draw.rect(self.outline_surface, RED, self.rect, 2, 10)
+        pg.draw.rect(self.outline_surface, Config.RED, self.rect, 2, 10)
 
             
 
     def update(self, screen : Surface):
-        screen.blit(self.surface, (self.x, HEIGHT - self.top))
+        screen.blit(self.surface, (self.x, Config.HEIGHT - self.top))
     
     def outline(self, invert=False):
         if invert:
@@ -203,7 +148,7 @@ class PlayerSprite(Player, Sprite):
         Sprite .__init__(self)
         super().__init__()
         self.surface = Surface((self.size, self.size)).convert_alpha()
-        self.surface.fill(WHITE)        
+        self.surface.fill(Config.WHITE)        
         
         # add shade to image
         shade = (0, 0, 0, 100)
@@ -224,7 +169,7 @@ class PlayerSprite(Player, Sprite):
     
     @property
     def topleft(self):
-        return (self.x - self.size, HEIGHT - self.y - self.size)
+        return (self.x - self.size, Config.HEIGHT - self.y - self.size)
 
     def update(self, screen : Surface):
         if self.angle_speed == 0:
@@ -232,7 +177,7 @@ class PlayerSprite(Player, Sprite):
         else:
             self.angle += self.angle_speed
             blit_rotate(screen, self.surface, self.topleft, -self.angle)
-        pg.draw.rect(screen, RED, (*self.topleft, self.size, self.size), 2)
+        pg.draw.rect(screen, Config.RED, (*self.topleft, self.size, self.size), 2)
     
     def _compute_omega(self):
         # First phase constant speed
@@ -278,17 +223,17 @@ class PlayerSprite(Player, Sprite):
         try:
             T = np.linspace(0, t, 300)
             X = Platform.scroll_speed * T + self.x
-            Y = HEIGHT - (h + v * T - 0.5 * g * T ** 2)
+            Y = Config.HEIGHT - (h + v * T - 0.5 * g * T ** 2)
             for x, y in zip(X, Y):
-                pg.draw.circle(screen, BLUE, (x, y), 2)
+                pg.draw.circle(screen, Config.BLUE, (x, y), 2)
         except UnboundLocalError:  # If fell without jumping
             pass
     
     def change_color(self, is_floor: bool):
         if is_floor:
-            self.surface.fill(WHITE)
+            self.surface.fill(Config.WHITE)
         else:
-            self.surface.fill(BLUE)
+            self.surface.fill(Config.BLUE)
 
     def process_event(self, event):
         if event.type == pg.KEYDOWN:
@@ -309,9 +254,6 @@ def main():
     while True:
         done = display.tick()
         if done:
-            display.render()
-            print("RESETTING")
-            time.sleep(1)
             display.reset()
         display.render()
         

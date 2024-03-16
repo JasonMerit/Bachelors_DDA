@@ -1,5 +1,5 @@
-from util import *
-from config import *
+from game.util import *
+from game.config import Config
 from math import sqrt
 
 class Platform():
@@ -53,7 +53,7 @@ class Player():
     current_platform : Platform = None
     next_platform : Platform = None
 
-    init_pos = WIDTH // 8, 100
+    init_pos = Config.WIDTH // 8, 100
     gravity = 2
     speed = 0
     _is_floor = True
@@ -135,6 +135,9 @@ class Player():
             self.hold_frames = self.jump_times[hold_frames]  # -1 is for no jump, but action is never 0
         self.speed = self.jump_speed
         self.is_floor = False
+    
+    def jump_release(self):
+        self.is_holding = False
 
     def tick(self):
         if self.move() is True or self.collision() is True:
@@ -155,11 +158,11 @@ class Player():
 
             self.y += self.speed
             if self.top < 0:
-                if not GOD:
-                    if VERBOSE:
+                if not Config.GOD:
+                    if Config.VERBOSE:
                         print("OFF SCREEN")
                     return True
-                self.y = HEIGHT
+                self.y = Config.HEIGHT
     
     def collision(self):
         """Check for collision with platforms and obstacles.
@@ -206,8 +209,8 @@ class Player():
     
     def _collide_with(self, platform):
         if self.y < platform.top:
-            if not GOD:
-                if VERBOSE:
+            if not Config.GOD:
+                if Config.VERBOSE:
                     print("Wall collision", platform)
                 return True
             self.y = platform.top  # Assuming flat surface
