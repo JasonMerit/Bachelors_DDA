@@ -1,4 +1,7 @@
 class Config:
+    grace_add = 15
+    grace_multiply = 0.7
+
     SEED = 23
     PRE_ACTIONS = 3
     # WIDTH, HEIGHT = 1600, 800
@@ -19,7 +22,7 @@ class Config:
 
     FPS = 6 * 10 # Frames per second (too high, and tapping wlil cross frames)
     # DT = 1 / FPS
-    GOD = 1
+    GOD = 0
     AGENT = 1
     FLAT = 0
     TOUCHING = 0

@@ -1,6 +1,7 @@
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame as pg
+from math import floor, log10
 
 from game.config import Config
 from game.actions import key_actions
@@ -11,7 +12,6 @@ class Controller:
         self.clock = pg.time.Clock()
     
     def is_event_trigger(self, action, event, trigger_type, triggers):
-        # Match event against trigger
         return action in self.actions and event.type == trigger_type and event.key in triggers
 
     def get_actions(self):
@@ -25,8 +25,14 @@ class Controller:
             action()
         self.clock.tick(Config.FPS)
 
-    # def set_event_timer(self, event_id:int, ms:int):
-    #     pg.time.set_timer(pg.USEREVENT+event_id, ms)
-
-    # def remove_event_timer(self, event_id:int):
-    #     self.set_event_timer(event_id, 0)
+    @staticmethod
+    def increase_speed():
+        k = 10 ** int(floor(log10(abs(Config.FPS))))
+        Config.FPS += k
+        Config.FPS = min(10000, Config.FPS)
+    
+    @staticmethod
+    def decrease_speed():
+        k = 10 ** int(floor(log10(abs(Config.FPS - 1))))
+        Config.FPS -= k
+        Config.FPS = max(4, Config.FPS)

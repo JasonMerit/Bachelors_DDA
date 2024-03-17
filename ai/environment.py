@@ -1,8 +1,6 @@
 import gym
 from gym import spaces
 
-from ai.agent import Agent
-
 class EndlessRunnerEnv(gym.Env):
     """The purpose of the environment is to provide a standard interface for the 
     agent to interact with the game. Display enherits from EndlessRunner, so it
@@ -55,18 +53,4 @@ class EndlessRunnerEnv(gym.Env):
         topleft = plat2.topleft
         return self.game.player.is_floor, topright[0], topright[1], topleft[0], topleft[1]
 
-def main():
-    env = EndlessRunnerEnv()
-    agent = Agent()
-    state = env.reset()
-    while True:
-        action = agent.get_action(state)
-        # action = env.action_space.sample()
-        state, reward, done, _ = env.step(action)
-        if done:
-            state = env.reset()
-        env.render()
-
-if __name__ == '__main__':
-    main()
         

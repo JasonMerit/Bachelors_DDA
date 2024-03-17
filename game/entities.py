@@ -53,7 +53,7 @@ class Player():
     current_platform : Platform = None
     next_platform : Platform = None
 
-    init_pos = Config.WIDTH // 8, 100
+    init_pos = Config.WIDTH // 10, 100
     gravity = 2
     speed = 0
     _is_floor = True
@@ -173,6 +173,7 @@ class Player():
         if platform and self.left > platform.right:  
             # self.next_platform = self.platforms[self.platforms.index(platform) + 1]
             platform.outline(True)
+            # print(platform.right)
             platform = None
             if self.is_floor is True:  # May already be jumping
                 self.is_floor = False  
@@ -208,7 +209,7 @@ class Player():
         self.current_platform = platform
     
     def _collide_with(self, platform):
-        if self.y < platform.top:
+        if self.y + Config.grace_add < platform.top:
             if not Config.GOD:
                 if Config.VERBOSE:
                     print("Wall collision", platform)

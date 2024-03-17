@@ -4,7 +4,7 @@ from math import sqrt
 import typing
 
 
-from game.rhythm_generator import LevelGenerator
+from game.game_master import GameMaster
 from game.config import Config
 from game.util import *
 from game.entities import Player, Platform
@@ -13,14 +13,13 @@ from game.entities import Player, Platform
 class EndlessRunner():
 
     def __init__(self):
-        self.level_generator = LevelGenerator()
+        self.game_master = GameMaster()
         self.max_height, self.min_height = Config.HEIGHT - 100, 100
         self.min_gap = 50
         self.rest_width = 300 if not Config.FLAT else 100000
         self.platform_width = 300
 
         # Player
-        Player.init_pos = Player.init_pos[0], Config.HEIGHT//2
         self.player : Player = self.construct_player()
         self.deaths = -1
     
@@ -33,11 +32,12 @@ class EndlessRunner():
         self.player.reset()
 
         # List of platforms that are moved every tick
-        self.platforms = [self.construct_platform(Player.init_pos, level=self.level)]  
+        self.platforms = [self.construct_platform(Player.init_pos, level=self.level)]
         self.platforms[0].outline() # debug
         
         self.platforms += self._create_level()
         self.platforms += self._create_level()
+        # quit()
         
         self.player.platforms = self.platforms  # Dirty coupling
         self.player.current_platform = self.platforms[0]  # Dirty coupling
@@ -77,7 +77,7 @@ class EndlessRunner():
         """
         self.level += 1
         start = self.platforms[-1].topright
-        platforms = self.level_generator.get_level(start, count)
+        platforms = self.game_master.get_level(start, count)
         res = []
         for plat in platforms[:-1]:
             topleft, width = plat
