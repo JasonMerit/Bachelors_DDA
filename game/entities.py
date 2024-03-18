@@ -173,7 +173,8 @@ class Player():
         if platform and self.left > platform.right:  
             # self.next_platform = self.platforms[self.platforms.index(platform) + 1]
             platform.outline(True)
-            # print(platform.right)
+            # self._floor_check(platform)  # Rare occurence
+
             platform = None
             if self.is_floor is True:  # May already be jumping
                 self.is_floor = False  
@@ -188,7 +189,9 @@ class Player():
                     self.is_floor = False
             
             else: # Player still atop of a platform: __|  | case
+                self._floor_check(platform)
                 if self._collide_with(self.next_platform) is True:
+                    assert self.next_platform.rest_area == 0, "Collision with rest area :("
                     return True
         
         # Wall collision
@@ -216,5 +219,8 @@ class Player():
                 return True
             self.y = platform.top  # Assuming flat surface
     
-
+    def _floor_check(self, platform):
+        if self.y < platform.top:  
+            self.y = platform.top
+            self.is_floor = True
 

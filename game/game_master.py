@@ -21,6 +21,7 @@ class GameMaster():
 
     max_height, min_height = Config.HEIGHT - 100, 100
     min_gap = 50
+    min_width = 100
 
     air_times = Player.jump_times
 
@@ -33,7 +34,7 @@ class GameMaster():
         platforms = []
         topright = start
         difficulty = 0.9
-        width = 50 * difficulty
+        width = self.min_width + random.randrange(0, int(100 * (1 - difficulty)))
         for _ in range(count):
             topleft = self._get_next_position(*topright, difficulty)
             platforms.append((topleft, width))
@@ -70,11 +71,10 @@ class GameMaster():
 
         # Max possible air time lands at minimum height
         t2 = (v + sqrt(v ** 2 + 2*g*(y + h1 - new_y))) / g
-        
         T = (t1 + t2) * difficulty
         G = int(T * Platform.scroll_speed) 
         # new_x = x + random.randrange(self.min_gap, G)
-        new_x = x + G
+        new_x = x + random.randrange(self.min_gap, G)
 
         # return max_x, H
         return new_x, new_y

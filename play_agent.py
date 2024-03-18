@@ -46,10 +46,10 @@ class PlayAgent():
             state, reward, done, _ = self.env.step(action)
 
             if done:
-                self.env.render()
-                self.pause()
-                while self.paused:
-                    self.controller.handle_events()
+                # self.env.render()
+                # self.pause()
+                # while self.paused:
+                #     self.controller.handle_events()
                 state = self.env.reset()
             self.env.render()
 
