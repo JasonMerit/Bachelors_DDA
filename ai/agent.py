@@ -9,15 +9,20 @@ class CheaterAgent():
     def __init__(self, verbose=False):
         self.verbose = verbose
 
-    def get_action(self, state):
+    def predict(self, state):
         action = 0
         is_floor, x1, y1, x2, y2 = state
 
-        # Jump if not on floor and close to the edge
-        if not is_floor or x1 - self.speed > self.player_left:  
+        # Stay if not on floor or not close to edge
+        # print(x1)
+        if not is_floor or self.player_left + self.speed < x1:  
             return action
         
-        dx, dy = x2 - x1, y2 - y1
+        # print(x1 - self.speed, self.player_left)
+        # quit()
+        dx = x2 - x1
+        # print(y1, y2)
+        dy = y2 - y1
 
         # Next platform is connected to the current platform
         if dx == dy == 0:  

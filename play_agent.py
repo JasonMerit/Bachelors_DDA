@@ -6,7 +6,7 @@ from ai.agent import CheaterAgent
 
 class PlayAgent():
     def __init__(self):
-        self.env = EndlessRunnerEnv(Display())
+        self.env = EndlessRunnerEnv(render=True)
 
         self.key_actions = {
             "quit": self.quit,
@@ -33,7 +33,7 @@ class PlayAgent():
     def play(self):
         
         agent = CheaterAgent()
-        state = self.env.reset()
+        state, _ = self.env.reset()
         while self.playing:
             # Pausing the game
             while self.paused:
@@ -41,16 +41,16 @@ class PlayAgent():
             
             self.controller.handle_events()
 
-            action = agent.get_action(state)
+            action = agent.predict(state)
             # action = env.action_space.sample()
-            state, reward, done, _ = self.env.step(action)
-
+            state, reward, terminal, truncated, _ = self.env.step(action)
+            done = terminal or truncated
             if done:
                 # self.env.render()
                 # self.pause()
                 # while self.paused:
                 #     self.controller.handle_events()
-                state = self.env.reset()
+                state, _ = self.env.reset()
             self.env.render()
 
 

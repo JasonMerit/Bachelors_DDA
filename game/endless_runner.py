@@ -37,6 +37,9 @@ class EndlessRunner():
         
         self.platforms += self._create_level()
         self.platforms += self._create_level()
+        # assert none of the platforms overlap
+        # for i in range(len(self.platforms) - 1):
+        #     assert self.platforms[i].right <= self.platforms[i + 1].left, (self.platforms[i], self.platforms[i + 1])
         # quit()
         
         self.player.platforms = self.platforms  # Dirty coupling
@@ -82,6 +85,7 @@ class EndlessRunner():
         for plat in platforms[:-1]:
             topleft, width = plat
             res.append(self.construct_platform(topleft, width))
+        platforms[-1] = platforms[-1][0], self.rest_width
         res.append(self.construct_platform(*platforms[-1], level=self.level))
         return res
         

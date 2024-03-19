@@ -1,22 +1,14 @@
-import argparse
-import Bachelors_DDA.Game.config as config
+from game.endless_runner import EndlessRunner
+from ai.environment import EndlessRunnerEnv
+from stable_baselines3.common.env_checker import check_env
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run the endless runner game")
-    parser.add_argument("--render", action="store_true", help="Render the game")
-    parser.add_argument("--agent", action="store_true", help="Run the agent")
-    # parser.add_argument("--god", action="store_true", default=False, help="Run with god mode")
-    # god mode that defaults to false
-    parser.add_argument("--god", action="store_true", help="Run with god mode")
-    args = parser.parse_args()
+game = EndlessRunner()
+env = EndlessRunnerEnv()
+# check_env(env, warn=True)
 
-    config.GOD_MODE = args.god
-    print(args.god)
-    if args.render:
-        if args.agent:
-            from environment import main
-        else:
-            from Bachelors_DDA.Game.display import main
-    else:
-        from Bachelors_DDA.Game.endless_runner import main
-    main()
+
+from stable_baselines3 import PPO, A2C, DQN
+from stable_baselines3.common.env_util import make_vec_env
+
+# Instantiate the env
+vec_env = make_vec_env(EndlessRunnerEnv, n_envs=1)
