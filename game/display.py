@@ -28,31 +28,31 @@ def lerp_color(color1, color2, t):
     return [x + (y-x) * t for x, y in zip(Color(color1), Color(color2))]
 
 class Display(EndlessRunner):
-    pg.init()
-
-    screen = pg.display.set_mode((Config.WIDTH, Config.HEIGHT))
-    pg.display.set_caption("Runner")
-
-    clock = pg.time.Clock()
-    # font_style = pg.font.SysFont(None, 30)
-    # font_big = pg.font.SysFont("rockwell", 50)
-    font_big = pg.font.Font(FONT, 50)
-    # font_big = pg.font.Font("ROCK.TTF", 50)
-    # font_style_small = pg.font.SysFont(None, 20)
     
     def __init__(self):
+        pg.init()
+
+        self.screen = pg.display.set_mode((Config.WIDTH, Config.HEIGHT))
+        pg.display.set_caption(Config.caption)
+
+        self.clock = pg.time.Clock()
+        # font_style = pg.font.SysFont(None, 30)
+        # font_big = pg.font.SysFont("rockwell", 50)
+        self.font_big = pg.font.Font(FONT, 50)
+        # font_big = pg.font.Font("ROCK.TTF", 50)
+        # font_style_small = pg.font.SysFont(None, 20)
         self.sprites = Group()
         super().__init__()
     
-    def reset(self):
+    def reset(self, seed=None):
         self.sprites.empty()
         self.sprites.add(self.player)
-        super().reset()
+        super().reset(seed)
     
     def close(self):
         pg.quit()
     
-    def render(self):
+    def render(self, state=None):
         self.screen.fill(Config.BLACK)
         self.sprites.update(self.screen)
         
@@ -65,6 +65,10 @@ class Display(EndlessRunner):
         msg = self.font_big.render(f'{self.deaths} deaths', True, Config.GREY)
         self.screen.blit(msg, (20, 20))
 
+        # Draw player.cleared_platforms
+        msg = self.font_big.render(f'{self.player.cleared_platforms} cleared', True, Config.GREY)
+        self.screen.blit(msg, (Config.WIDTH - msg.get_width() - 20, 70))
+
         # Draw FPS
         msg = self.font_big.render(f'{Config.FPS}', True, Config.GREY)
         self.screen.blit(msg, (Config.WIDTH // 2, 20))
@@ -72,8 +76,11 @@ class Display(EndlessRunner):
         # Draw player trajectory
         self.player.draw_curve(self.screen, self.platforms[:2])
 
-        # Draw debugger stuff
-
+        # Draw state
+        if state is not None:
+            x1, y1, x2, y2 = state.astype(int)
+            pg.draw.circle(self.screen, Config.WHITE, (x1, Config.HEIGHT - y1), 5)
+            pg.draw.circle(self.screen, Config.WHITE, (x2, Config.HEIGHT - y2), 5)
 
         pg.display.flip()
         self.clock.tick(Config.FPS)
@@ -94,11 +101,12 @@ class Display(EndlessRunner):
 
 
 class PlatformSprite(Platform, Sprite):
-    font = pg.font.Font(FONT, 50)
 
     def __init__(self, topleft, width, color, level=0):
         super().__init__(topleft, width, level=level)
         Sprite.__init__(self)
+        
+        self.font = pg.font.Font(FONT, 50)
 
         # self.surface = pg.Surface((platform.width, HEIGHT))
         # t0 = time.time()
@@ -246,16 +254,3 @@ class PlayerSprite(Player, Sprite):
                 # if self.is_falling is False:
                 #     self._fall()
 
-import time
-def main():
-    display = Display()
-    display.reset()
-
-    while True:
-        done = display.tick()
-        if done:
-            display.reset()
-        display.render()
-        
-if __name__ == "__main__":
-    main()
