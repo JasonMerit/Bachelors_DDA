@@ -2,6 +2,8 @@ class Config:
     grace_add = 15
     grace_multiply = 0.7
 
+    caption = "Endless Runner"
+
     SEED = 23
     PRE_ACTIONS = 3
     # WIDTH, HEIGHT = 1600, 800
