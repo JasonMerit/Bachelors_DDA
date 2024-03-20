@@ -28,7 +28,7 @@ class EndlessRunnerApp():
         self.paused = not self.paused
     
     def play(self):
-        self.game.reset()
+        self.game.reset(seed=42)  # Seed for reproducibility
 
         
         while self.playing:

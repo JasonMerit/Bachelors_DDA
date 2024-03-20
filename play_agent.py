@@ -1,6 +1,4 @@
-from game.display import Display
 from game.controls import Controller
-from game.entities import Player, Platform
 from ai.environment import EndlessRunnerEnv
 from ai.agent import CheaterAgent
 
@@ -31,9 +29,8 @@ class PlayAgent():
         self.game.reset()
  
     def play(self):
-        
         agent = CheaterAgent()
-        state, _ = self.env.reset()
+        state, _ = self.env.reset(42)  # Seed for reproducibility
         while self.playing:
             # Pausing the game
             while self.paused:
@@ -51,7 +48,7 @@ class PlayAgent():
                 # while self.paused:
                 #     self.controller.handle_events()
                 state, _ = self.env.reset()
-            self.env.render()
+            self.env.render(state)
 
 
 if __name__ == "__main__":

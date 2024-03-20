@@ -6,9 +6,6 @@ from math import sqrt
 from game.config import Config
 from game.entities import Player, Platform
 
-random.seed(Config.SEED)
-np.random.seed(Config.SEED)
-
 class GameMaster():
     """Generates levels for the endless runner"""
 
@@ -24,6 +21,10 @@ class GameMaster():
     min_width = 100
 
     air_times = Player.jump_times
+
+    def seed(self, seed):
+        random.seed(seed)
+        np.random.seed(seed)
 
     def get_level(self, start: Tuple[int, int], count: int):
         """Returns a level with a given number of platforms.

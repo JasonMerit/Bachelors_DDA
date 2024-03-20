@@ -1,9 +1,3 @@
-import random
-import numpy as np
-from math import sqrt
-import typing
-
-
 from game.game_master import GameMaster
 from game.config import Config
 from game.util import *
@@ -17,13 +11,14 @@ class EndlessRunner():
         self.max_height, self.min_height = Config.HEIGHT - 100, 100
         self.min_gap = 50
         self.rest_width = 300 if not Config.FLAT else 100000
-        self.platform_width = 300
 
         # Player
         self.player : Player = self.construct_player()
         self.deaths = -1
     
-    def reset(self):
+    def reset(self, seed=None):
+        if seed is not None:
+            self.game_master.seed(seed)
         self.deaths += 1
         self.score = 0
         self.level = 1
@@ -55,7 +50,7 @@ class EndlessRunner():
         self.score += 1  # Increase score every tick
         return False  # Terminated (replace all self.restart() with return True)
 
-    def render(self):
+    def render(self, state=None):
         pass  # Implemented in Display
     
     def _update_positions(self):
@@ -100,7 +95,8 @@ class EndlessRunner():
 
     ### ===== Agent methods ===== ###
     def take_action(self, action):
-        if self.player.is_floor and action != 0:
+        """Actions: 0-2: Jump ranges from short to long"""
+        if self.player.is_floor:
             self.player.jump(action)
 
     ### ===== Inherited by Display ===== ###

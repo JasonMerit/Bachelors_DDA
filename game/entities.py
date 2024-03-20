@@ -64,7 +64,7 @@ class Player():
     jump_speed = 15
     is_holding = False
     max_hold_frames = 10
-    jump_times = [42, max_hold_frames, max_hold_frames // 2, 0]  # 42 is for no jump, but index is never 0
+    jump_times = [max_hold_frames, max_hold_frames // 2, 0]  # 42 is for no jump, but index is never 0
     hold_frames = 0
     jump_threshold = 10
 
@@ -78,14 +78,12 @@ class Player():
     up_time = jump_speed / gravity + max_hold_frames  # Increasing position time
     fly_time = lambda self, delta_y: self.up_time + sqrt(2 * delta_y / self.gravity)
 
-
     def reset(self):
         self.x, self.y = self.init_pos
         self.speed = 0
-        self._is_floor = True
+        self.is_floor = True
         self.is_holding = False
-        self.angle = 0
-        self.angle_speed = 0
+        self.cleared_platforms = 0
     
     @property
     def pos(self):
@@ -132,7 +130,7 @@ class Player():
         if hold_frames is None:  # Human player
             self.hold_frames = 0
         else:
-            self.hold_frames = self.jump_times[hold_frames]  # -1 is for no jump, but action is never 0
+            self.hold_frames = self.jump_times[hold_frames]  
         self.speed = self.jump_speed
         self.is_floor = False
     
@@ -140,8 +138,10 @@ class Player():
         self.is_holding = False
 
     def tick(self):
+        
         if self.move() is True or self.collision() is True:
             return True
+        return False
         
     def move(self):
         # # Apply gravity if not on floor
@@ -190,8 +190,12 @@ class Player():
             
             else: # Player still atop of a platform: __|  | case
                 self._floor_check(platform)
-                if self._collide_with(self.next_platform) is True:
-                    assert self.next_platform.rest_area == 0, "Collision with rest area :("
+                platform.outline(True)
+                platform = self.next_platform
+                platform.outline()
+                self.next_platform = self.platforms[self.platforms.index(platform) + 1]
+                if self._collide_with(platform) is True:
+                    assert platform.rest_area == 0, "Collision with rest area :("
                     return True
         
         # Wall collision
@@ -209,6 +213,8 @@ class Player():
             # if not GOD and pg.sprite.spritecollide(self.player, self.obstacle_sprites, False):
             #     return True
 
+        if platform and self.current_platform != platform:
+            self.cleared_platforms += 1
         self.current_platform = platform
     
     def _collide_with(self, platform):
