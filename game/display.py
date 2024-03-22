@@ -71,9 +71,9 @@ class Display(EndlessRunner):
         self.sprites.update(self.screen)
         
         # Draw score
-        self.score += 1
-        msg = self.font_big.render(f'{self.score} m', True, Config.GREY)
-        self.screen.blit(msg, (Config.WIDTH - msg.get_width() - 20, 20))
+        # self.score += 1
+        # msg = self.font_big.render(f'{self.score} m', True, Config.GREY)
+        # self.screen.blit(msg, (Config.WIDTH - msg.get_width() - 20, 20))
 
         # Draw death count
         msg = self.font_big.render(f'{self.deaths} deaths', True, Config.GREY)
@@ -81,7 +81,7 @@ class Display(EndlessRunner):
 
         # Draw player.cleared_platforms
         msg = self.font_big.render(f'{self.player.cleared_platforms} cleared', True, Config.GREY)
-        self.screen.blit(msg, (Config.WIDTH - msg.get_width() - 20, 70))
+        self.screen.blit(msg, (Config.WIDTH - msg.get_width() - 20, 20))
 
         # Draw FPS
         msg = self.font_big.render(f'{Config.FPS}', True, Config.GREY)
