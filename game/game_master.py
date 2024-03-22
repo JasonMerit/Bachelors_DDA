@@ -22,9 +22,15 @@ class GameMaster():
 
     air_times = Player.jump_times
 
+    def __init__(self):
+        self.difficulty = 0.7
+
     def seed(self, seed):
         random.seed(seed)
         np.random.seed(seed)
+    
+    def set_difficulty(self, difficulty):
+        self.difficulty = difficulty
 
     def get_level(self, start: Tuple[int, int], count: int):
         """Returns a level with a given number of platforms.
@@ -34,10 +40,9 @@ class GameMaster():
         """
         platforms = []
         topright = start
-        difficulty = 1
         width = self.min_width# + random.randrange(0, int(100 * (1 - difficulty)))
         for _ in range(count):
-            topleft = self._get_next_position(*topright, difficulty)
+            topleft = self._get_next_position(*topright)
             platforms.append((topleft, width))
             
             topright = topleft[0] + width, topleft[1]
@@ -46,8 +51,11 @@ class GameMaster():
         topleft = topleft[0] + width, topleft[1]
         platforms.append((topleft, width))
         return platforms
+    
+    def next_platform(self, x, y):
+        return self._get_next_position(x, y), self.min_width
 
-    def _get_next_position(self, x, y, difficulty):
+    def _get_next_position(self, x, y):
         """
         :param x, y: top right of previous platform
         :return: x, y: top left of next platform
@@ -72,7 +80,7 @@ class GameMaster():
 
         # Max possible air time lands at minimum height
         t2 = (v + sqrt(v ** 2 + 2*g*(y + h1 - new_y))) / g
-        T = (t1 + t2) * difficulty
+        T = (t1 + t2) * self.difficulty
         G = int(T * Platform.scroll_speed) 
         new_x = x + G
         # new_x = x + random.randrange(self.min_gap, G)

@@ -28,8 +28,11 @@ class EndlessRunner():
         self.platforms = [self.construct_platform(Player.init_pos, level=self.level)]
         self.platforms[0].outline() # debug
         
-        self.platforms += self._create_level()
-        self.platforms += self._create_level()
+        # self.platforms += self._create_level()
+        # self.platforms += self._create_level()
+        while self.platforms[-1].right < Config.WIDTH:
+            self._add_platform()
+        self._add_platform()
         # assert none of the platforms overlap
         # for i in range(len(self.platforms) - 1):
         #     assert self.platforms[i].right <= self.platforms[i + 1].left, (self.platforms[i], self.platforms[i + 1])
@@ -67,10 +70,17 @@ class EndlessRunner():
             if Config.VERBOSE:
                 print("Removing", self.platforms[0])
             
-            if self.platforms[0].is_rest_area:
-                self.platforms += self._create_level()
+            # if self.platforms[0].is_rest_area:
+            #     self.platforms += self._create_level()
                 
             self.remove_platform()
+            self._add_platform()
+    
+    def _add_platform(self):
+        """Add a new platform to the end of the list."""
+        start = self.platforms[-1].topright
+        platform = self.game_master.next_platform(*start)
+        self.platforms.append(self.construct_platform(*platform))
 
     def _create_level(self, count=3):
         """Create a new level of platforms and rest area.
