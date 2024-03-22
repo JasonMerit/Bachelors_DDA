@@ -10,18 +10,23 @@ class EndlessRunnerEnv(gym.Env):
     agent to interact with the game. Display enherits from EndlessRunner, so it
     can be used to run the game with rendering."""
 
-    def __init__(self, render=False):
+    def __init__(self, render=False, truncated=True):
         self.game = Display() if render else EndlessRunner()
         self.action_space = spaces.Discrete(4)
         # self.observation_space = spaces.Discrete(1)
-        self.observation_space = spaces.Box(low=0, high=1000, shape=(4,), dtype=np.float16)
+        self.observation_space = spaces.Box(low=0, high=1000, shape=(3,), dtype=np.float16)
         # self.observation_space = spaces.Box(low=0, high=1000, shape=(5,), dtype=np.float16)
+        self.step_count = 0
+        self.max_steps = 1000
+
+        self._truncate = lambda: self.step_count >= self.max_steps if truncated else False
 
     def step(self, action):
         """Actions:
         0: Do nothing
         1-3: Jump ranges from short to long
         """
+        self.step_count += 1
         cleared_platforms = self.game.player.cleared_platforms
         if action > 0:
             self.game.take_action(action - 1)
@@ -34,15 +39,15 @@ class EndlessRunnerEnv(gym.Env):
             self.render()
 
         # terminated = self.game.tick()  # Remember truncation
-        truncated = False 
-        reward = self.game.player.cleared_platforms - cleared_platforms
-        # reward = 1 if not terminated else -1
-        assert self.game.player.is_floor or terminated, f"Player is not on floor!"
-        return self._state(), reward, terminated, truncated, {}
+        # reward = self.game.player.cleared_platforms - cleared_platforms
+        # reward = 0 if terminated else 1
+        reward = -100 if terminated else 1
+        return self._state(), reward, terminated, self._truncate(), {}
     
     def reset(self, seed=None):
         super().reset(seed=seed)
         self.game.reset(seed)
+        self.step_count = 0
         return self._state(), {}
     
     def render(self, state=None):
@@ -70,8 +75,37 @@ class EndlessRunnerEnv(gym.Env):
 
         topright = plat1.topright
         topleft = plat2.topleft
-        return np.array([topright[0], topright[1], topleft[0], topleft[1]]).astype(np.float16)
+        x1 = topright[0] - self.game.player.right
+        dx = topleft[0] - topright[0]
+        dy = topleft[1] - topright[1]
+        return np.array([x1, dx, dy]).astype(np.float16)
+        # return np.array([topright[0], topright[1], topleft[0], topleft[1]]).astype(np.float16)
         # return np.array([self.game.player.is_floor, topright[0], topright[1], topleft[0], topleft[1]]).astype(np.float16)
+
+class DumbEnv(gym.Env):
+    max_steps = 10
+
+    def __init__(self, render=False):
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Discrete(2)
+    
+    def step(self, action):
+        self.step_count += 1
+        reward = int(action == self.last_observation)
+        self.last_observation = self.observation_space.sample()
+        truncated = self.step_count >= self.max_steps
+        return np.array(self.last_observation).astype(np.float32), reward, False, truncated, {}
+    
+    def reset(self, seed=None):
+        self.step_count = 0
+        self.last_observation = self.observation_space.sample()
+        return np.array(self.last_observation).astype(np.float32), {}
+    
+    def render(self, state=None):
+        pass
+
+    def close(self):
+        pass
 
 
 # from stable_baselines3.common.env_checker import check_env

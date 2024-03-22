@@ -6,8 +6,8 @@ from math import sqrt
 from game.config import Config
 from game.entities import Player, Platform
 
-random.seed(Config.SEED)
-np.random.seed(Config.SEED)
+random.seed(42)
+np.random.seed(42)
 
 class LevelGenerator():
     """Generates levels for the endless runner"""

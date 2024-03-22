@@ -1,4 +1,3 @@
-from game.config import Config
 from game.controls import Controller
 from game.display import Display
 
@@ -7,7 +6,7 @@ class EndlessRunnerApp():
         self.game = Display()
 
         self.key_actions = {
-            "quit": self.quit,
+            "quit": self.quit, 
             "jump": self.game.jump,
             "jump_release": self.game.jump_release,
             "pause": self.pause, 
@@ -29,7 +28,6 @@ class EndlessRunnerApp():
     
     def play(self):
         self.game.reset(seed=42)  # Seed for reproducibility
-
         
         while self.playing:
             # Pausing the game
@@ -42,7 +40,10 @@ class EndlessRunnerApp():
                 self.game.reset()
             
             
-            self.game.render()
+            self.game.render(debug=False)
+        
+        # history = self.game.history
+        # Display.play_recording(history)
 
 
 if __name__ == "__main__":

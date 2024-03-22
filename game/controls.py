@@ -7,9 +7,9 @@ from game.config import Config
 from game.actions import key_actions
 
 class Controller:
+
     def __init__(self, actions={}):
         self.actions = actions
-        self.clock = pg.time.Clock()
     
     def is_event_trigger(self, action, event, trigger_type, triggers):
         return action in self.actions and event.type == trigger_type and event.key in triggers
@@ -23,16 +23,15 @@ class Controller:
     def handle_events(self):
         for action in self.get_actions():
             action()
-        self.clock.tick(Config.FPS)
 
-    @staticmethod
-    def increase_speed():
+    @classmethod
+    def increase_speed(cls):
         k = 10 ** int(floor(log10(abs(Config.FPS))))
         Config.FPS += k
         Config.FPS = min(10000, Config.FPS)
     
-    @staticmethod
-    def decrease_speed():
+    @classmethod
+    def decrease_speed(cls):
         k = 10 ** int(floor(log10(abs(Config.FPS - 1))))
         Config.FPS -= k
         Config.FPS = max(4, Config.FPS)

@@ -2,12 +2,12 @@ import pygame as pg
 import numpy as np
 import random
 
-from Bachelors_DDA.Game.config import *
-from rhythm_generator import LevelGenerator
+# from Bachelors_DDA.Game.config import *
+from rhytm_generator.rhythm_generator import LevelGenerator
 
-random.seed(SEED)
-np.random.seed(SEED)
-
+random.seed(42)
+np.random.seed(42)
+UNIT = 0.25
 class Display():
     pg.init()
     BLACK, WHITE = (24, 24, 24), (202, 202, 202)
@@ -18,8 +18,8 @@ class Display():
     display.fill(BLACK)
     pg.display.set_caption("Runner")
     clock = pg.time.Clock()
-    font_style = pg.font.SysFont(None, 30)
-    font_style_small = pg.font.SysFont(None, 20)
+    font_style = pg.font.SysFont("", 30)
+    font_style_small = pg.font.SysFont("", 20)
     
     def update(self, rhythm, geometry):
         self.display.fill(self.BLACK)
@@ -102,31 +102,31 @@ def action(level_generator: LevelGenerator):
     action_count += 1
     return res1, res2
 
-def test():
-    # Determine seed
-    global SEED
-    for _ in range(PRE_ACTIONS):
-        print(f"\nSEED {SEED}")
-        random.seed(SEED)
-        np.random.seed(SEED)
-        action()
-        SEED += 1
+# def test():
+#     # Determine seed
+#     global SEED
+#     for _ in range(PRE_ACTIONS):
+#         print(f"\nSEED {SEED}")
+#         random.seed(SEED)
+#         np.random.seed(SEED)
+#         action()
+#         SEED += 1
 
 
-def main():
-    display = Display() if not DEBUG else None
-    level_generator = LevelGenerator()
+# def main():
+#     display = Display() if not DEBUG else None
+#     level_generator = LevelGenerator()
 
-    print(f"{SEED=}")
-    for _ in range(PRE_ACTIONS):
-        rhythm, geometry = action(level_generator)
-        process_events(level_generator) 
+#     print(f"{SEED=}")
+#     for _ in range(PRE_ACTIONS):
+#         rhythm, geometry = action(level_generator)
+#         process_events(level_generator) 
 
-    if display:
-        while True:
-            if res := process_events(level_generator):
-                display.update(*res)
+#     if display:
+#         while True:
+#             if res := process_events(level_generator):
+#                 display.update(*res)
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 

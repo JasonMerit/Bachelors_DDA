@@ -23,8 +23,6 @@ class EndlessRunner():
         self.score = 0
         self.level = 1
     
-        # Player
-        self.player.reset()
 
         # List of platforms that are moved every tick
         self.platforms = [self.construct_platform(Player.init_pos, level=self.level)]
@@ -37,9 +35,12 @@ class EndlessRunner():
         #     assert self.platforms[i].right <= self.platforms[i + 1].left, (self.platforms[i], self.platforms[i + 1])
         # quit()
         
-        self.player.platforms = self.platforms  # Dirty coupling
-        self.player.current_platform = self.platforms[0]  # Dirty coupling
-        self.player.next_platform = self.platforms[1]  # Dirty coupling
+        # self.player.platforms = self.platforms  # Dirty coupling
+        # self.player.current_platform = self.platforms[0]  # Dirty coupling
+        # self.player.next_platform = self.platforms[1]  # Dirty coupling
+
+        # Player
+        self.player.reset(self.platforms)
 
     def tick(self):
         self._update_positions()
@@ -51,6 +52,9 @@ class EndlessRunner():
         return False  # Terminated (replace all self.restart() with return True)
 
     def render(self, state=None):
+        pass  # Implemented in Display
+
+    def close(self):
         pass  # Implemented in Display
     
     def _update_positions(self):
@@ -109,14 +113,3 @@ class EndlessRunner():
     def remove_platform(self):
         self.platforms.pop(0)
 
-
-def main():
-    game = EndlessRunner()
-    game.reset()
-    for _ in range(Config.PRE_ACTIONS):
-        done = game.tick()
-        if done:
-            game.reset()
-
-if __name__ == "__main__":
-    main()

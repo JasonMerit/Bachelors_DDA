@@ -1,6 +1,6 @@
 from game.controls import Controller
-from ai.environment import EndlessRunnerEnv
-from ai.agent import CheaterAgent
+from reinforcement_learning.environment import EndlessRunnerEnv
+from reinforcement_learning.agent import CheaterAgent
 
 class PlayAgent():
     def __init__(self):
@@ -26,11 +26,13 @@ class PlayAgent():
         self.paused = not self.paused
     
     def reset(self):
-        self.game.reset()
+        self.env.reset()
  
     def play(self):
         agent = CheaterAgent()
         state, _ = self.env.reset(42)  # Seed for reproducibility
+
+
         while self.playing:
             # Pausing the game
             while self.paused:
@@ -41,8 +43,7 @@ class PlayAgent():
             action = agent.predict(state)
             # action = env.action_space.sample()
             state, reward, terminal, truncated, _ = self.env.step(action)
-            done = terminal or truncated
-            if done:
+            if terminal or truncated:
                 # self.env.render()
                 # self.pause()
                 # while self.paused:

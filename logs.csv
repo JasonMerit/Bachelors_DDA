@@ -1,0 +1,11 @@
+model, comment, time_steps, mean_reward, std_reward
+models/03_22/PPO_08_49, 10000
+models/03_22/PPO_08_51, 10000
+models/03_22/PPO_08_54, 10000
+models/03_22/PPO_08_55, 10000
+models/03_22/PPO_08_55, 1000
+models/03_22/PPO_09_15, 1000000
+models/03_22/PPO_10_47, 10, -87.3, 10.178899744078432
+models/03_22/PPO_10_48/_3000000_steps, 1
+models/03_22/PPO_10_48, 10_000_000, 855.8, 277.92329877144164
+models/03_22/PPO_19_16, d=1.0, 1.0e6, 1000.0, 0.0

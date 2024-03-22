@@ -1,71 +1,31 @@
-import pygame
-import random
-from multiprocessing import Pool, cpu_count
+import time
 
-cpu_count = cpu_count()
+import gymnasium as gym
+import numpy as np
 
-# Initialize Pygame
-pygame.init()
+from stable_baselines3 import A2C
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.utils import set_random_seed
+from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.env_util import make_vec_env
 
-# Set up the screen dimensions
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Static TV Screen")
+from typing import Callable
 
-# Define colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
+def make_env(env_id: str, rank: int, seed: int = 0) -> Callable:
+    """
+    Utility function for multiprocessed env.
 
-# Main function for generating static
-def generate_static(surface):
-    for y in range(SCREEN_HEIGHT):
-        for x in range(SCREEN_WIDTH):
-            # Randomly flicker pixels on and off
-            if random.random() < 0.01:  # Adjust this probability to control flickering intensity
-                color = random.choice([WHITE, BLACK])
-            else:
-                color = BLACK if random.random() < 0.5 else WHITE  # Simulate noise
-            surface.set_at((x, y), color)
+    :param env_id: (str) the environment ID
+    :param num_env: (int) the number of environment you wish to have in subprocesses
+    :param seed: (int) the inital seed for RNG
+    :param rank: (int) index of the subprocess
+    :return: (Callable)
+    """
 
+    def _init() -> gym.Env:
+        env = gym.make(env_id)
+        env.reset(seed=seed + rank)
+        return env
 
-if __name__ == "__main__":
-    # Create a pool of workers
-    with Pool(cpu_count) as p:
-        # Main game loop
-        running = True
-        while running:
-            # Handle events
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-
-            # Generate static
-            p.apply_async(generate_static, args=(screen,))
-
-    # Generate static
-    # generate_static(screen)
-
-    # # Update the display
-    # pygame.display.flip()
-
-    # # Close the pool
-    # p.close()
-    # p.join()
-
-# Main game loop
-# running = True
-# while running:
-#     # Handle events
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             running = False
-
-#     # Generate static
-#     generate_static(screen)
-
-#     # Update the display
-#     pygame.display.flip()
-
-# # Quit Pygame
-# pygame.quit()
+    set_random_seed(seed)
+    return _init

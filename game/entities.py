@@ -1,6 +1,8 @@
+from typing import List
+from math import sqrt
+
 from game.util import *
 from game.config import Config
-from math import sqrt
 
 class Platform():
     """x and top define position, representing the top left corner of the platform.
@@ -48,10 +50,9 @@ class Player():
     """x and y define position, representing the BOTTOM RIGHT corner of the player.
     Since platform uses TOP left corner, this allows for easy collision detection.
     TODO: replace with vector when dashing"""
-    
-    platforms = []  # Set by EndlessRunner
-    current_platform : Platform = None
-    next_platform : Platform = None
+    # platforms = []  # Set by EndlessRunner
+    # current_platform = None
+    # next_platform = None
 
     init_pos = Config.WIDTH // 10, 100
     gravity = 2
@@ -78,7 +79,9 @@ class Player():
     up_time = jump_speed / gravity + max_hold_frames  # Increasing position time
     fly_time = lambda self, delta_y: self.up_time + sqrt(2 * delta_y / self.gravity)
 
-    def reset(self):
+    def reset(self, platforms : List[Platform]):
+        self.platforms = platforms
+        self.current_platform, self.next_platform = platforms[:2]
         self.x, self.y = self.init_pos
         self.speed = 0
         self.is_floor = True
@@ -119,6 +122,9 @@ class Player():
     
     def change_color(self, is_floor: bool):
         pass # for debugging
+
+    def draw_curve(self, screen, platformss):
+        pass
 
     def jump(self, hold_frames=None):
         """Jump and hold jump if long is True. 

@@ -2,7 +2,8 @@ import pygame as pg
 from pygame.color import Color
 from pygame.surface import Surface
 from pygame.sprite import Sprite, Group
-import random, os, time, math
+import random, os
+from collections import deque
 
 from game.endless_runner import EndlessRunner, Platform, Player
 from game.config import Config
@@ -25,7 +26,8 @@ def random_color():
     return (random.randint(100, 150), random.randint(100, 150), random.randint(100, 150))    
 
 def lerp_color(color1, color2, t):
-    return [x + (y-x) * t for x, y in zip(Color(color1), Color(color2))]
+    return Color([x + (y-x) * t for x, y in zip(Color(color1), Color(color2))])
+    # return [x + (y-x) * t for x, y in zip(Color(color1), Color(color2))]
 
 class Display(EndlessRunner):
     
@@ -43,6 +45,18 @@ class Display(EndlessRunner):
         # font_style_small = pg.font.SysFont(None, 20)
         self.sprites = Group()
         super().__init__()
+
+        self.history = deque(maxlen=100)
+    
+    @staticmethod
+    def play_recording(history, fps=60):
+        pg.init()
+        screen = pg.display.set_mode((Config.WIDTH, Config.HEIGHT))
+        clock = pg.time.Clock()
+        for h in history:
+            pg.surfarray.blit_array(screen, h)
+            pg.display.flip()
+            clock.tick(fps)
     
     def reset(self, seed=None):
         self.sprites.empty()
@@ -52,7 +66,7 @@ class Display(EndlessRunner):
     def close(self):
         pg.quit()
     
-    def render(self, state=None):
+    def render(self, state=None, debug=True):
         self.screen.fill(Config.BLACK)
         self.sprites.update(self.screen)
         
@@ -73,16 +87,18 @@ class Display(EndlessRunner):
         msg = self.font_big.render(f'{Config.FPS}', True, Config.GREY)
         self.screen.blit(msg, (Config.WIDTH // 2, 20))
         
-        # Draw player trajectory
-        self.player.draw_curve(self.screen, self.platforms[:2])
+        if debug is True:
+            # Draw player trajectory
+            self.player.draw_curve(self.screen, self.platforms[:2])
 
-        # Draw state
-        if state is not None:
-            x1, y1, x2, y2 = state.astype(int)
-            pg.draw.circle(self.screen, Config.WHITE, (x1, Config.HEIGHT - y1), 5)
-            pg.draw.circle(self.screen, Config.WHITE, (x2, Config.HEIGHT - y2), 5)
+            # Draw state
+            if state is not None:
+                x1, y1, x2, y2 = state.astype(int)
+                pg.draw.circle(self.screen, Config.WHITE, (x1, Config.HEIGHT - y1), 5)
+                pg.draw.circle(self.screen, Config.WHITE, (x2, Config.HEIGHT - y2), 5)
 
         pg.display.flip()
+        self.history.append(pg.surfarray.array3d(self.screen))
         self.clock.tick(Config.FPS)
     
     def construct_player(self):
@@ -126,8 +142,10 @@ class PlatformSprite(Platform, Sprite):
         if self.is_rest_area:
             # font = pg.font.Font("ROCK.TTF", 50)
             # font = pg.font.SysFont("rockwell", 50)
-            msg = self.font.render(f"LEVEL {self.is_rest_area}", True, Config.GREY)
-            x = (msg.get_width() - self.width // 4) / 2  
+            msg = self.font.render(str(self.is_rest_area), True, Config.GREY)
+            # x = (msg.get_width() - self.width // 4) / 2  
+            # middle of surface
+            x = (self.width - msg.get_width()) / 2
             y = (self.top - msg.get_height()) / 2
             self.surface.blit(msg, (x, y))
 

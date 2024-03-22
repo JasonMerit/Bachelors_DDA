@@ -4,9 +4,6 @@ class Config:
 
     caption = "Endless Runner"
 
-    SEED = 23
-    PRE_ACTIONS = 3
-    # WIDTH, HEIGHT = 1600, 800
     WIDTH, HEIGHT = 800, 600
     # WIDTH = 2000
     # HEIGHT = 1000
@@ -22,7 +19,7 @@ class Config:
     DENSITY = 10 # Number of hatches
     DURATION = 5 # Length of rhythm in seconds (5, 10, 15, 20)
 
-    FPS = 6 * 10 # Frames per second (too high, and tapping wlil cross frames)
+    FPS = 60 # Frames per second (too high, and tapping wlil cross frames)
     # DT = 1 / FPS
     GOD = 0
     AGENT = 1
