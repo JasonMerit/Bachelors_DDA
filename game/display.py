@@ -46,6 +46,7 @@ class Display(EndlessRunner):
         self.sprites = Group()
         super().__init__()
 
+        self.highscore = 0
         self.history = deque(maxlen=100)
     
     @staticmethod
@@ -61,6 +62,8 @@ class Display(EndlessRunner):
     def reset(self, seed=None):
         self.sprites.empty()
         self.sprites.add(self.player)
+        if self.player.cleared_platforms > self.highscore:
+            self.highscore = self.player.cleared_platforms
         super().reset(seed)
     
     def close(self):
@@ -80,7 +83,7 @@ class Display(EndlessRunner):
         self.screen.blit(msg, (20, 20))
 
         # Draw player.cleared_platforms
-        msg = self.font_big.render(f'{self.player.cleared_platforms} cleared', True, Config.GREY)
+        msg = self.font_big.render(f'{self.player.cleared_platforms} / {self.highscore}', True, Config.GREY)
         self.screen.blit(msg, (Config.WIDTH - msg.get_width() - 20, 20))
 
         # Draw FPS

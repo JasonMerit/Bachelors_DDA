@@ -56,9 +56,6 @@ class Player():
 
     init_pos = Config.WIDTH // 10, 100
     gravity = 2
-    speed = 0
-    _is_floor = True
-    is_falling = False
     size = 30
     
     # jumping
@@ -75,9 +72,13 @@ class Player():
     rotations = 2
 
     # pre computations for physics constraints
-    max_jump_height = jump_speed * max_hold_frames + 0.5 * jump_speed ** 2 / gravity
-    up_time = jump_speed / gravity + max_hold_frames  # Increasing position time
-    fly_time = lambda self, delta_y: self.up_time + sqrt(2 * delta_y / self.gravity)
+    # max_jump_height = jump_speed * max_hold_frames + 0.5 * jump_speed ** 2 / gravity
+    # up_time = jump_speed / gravity + max_hold_frames  # Increasing position time
+    # fly_time = lambda self, delta_y: self.up_time + sqrt(2 * delta_y / self.gravity)
+
+    def __init__(self):
+        self.cleared_platforms = 0
+        self._is_floor = True
 
     def reset(self, platforms : List[Platform]):
         self.platforms = platforms
