@@ -30,9 +30,8 @@ class EndlessRunner():
         
         # self.platforms += self._create_level()
         # self.platforms += self._create_level()
-        while self.platforms[-1].right < Config.WIDTH:
-            self._add_platform()
-        self._add_platform()
+        self.fill_platforms()
+        # self._add_platform()
         # assert none of the platforms overlap
         # for i in range(len(self.platforms) - 1):
         #     assert self.platforms[i].right <= self.platforms[i + 1].left, (self.platforms[i], self.platforms[i + 1])
@@ -76,6 +75,12 @@ class EndlessRunner():
             self.remove_platform()
             self._add_platform()
     
+    def fill_platforms(self):
+        """Fill the screen with platforms."""
+        while self.platforms[-1].right < Config.WIDTH:
+            self._add_platform()
+        self._add_platform()
+
     def _add_platform(self):
         """Add a new platform to the end of the list."""
         start = self.platforms[-1].topright
