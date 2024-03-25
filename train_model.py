@@ -21,7 +21,8 @@ def train(save_path: str, Env, total_timesteps, checkpoints: bool = True):
         Monitor(Env()), 
         eval_freq=total_timesteps//10, 
         verbose=1, 
-        n_eval_episodes=1)
+        n_eval_episodes=1,
+        log_path=save_path)
     
     checkpoint_callback = CheckpointCallback(
         save_freq=total_timesteps//10,
@@ -68,7 +69,7 @@ def train(save_path: str, Env, total_timesteps, checkpoints: bool = True):
     # Final eval
     mean, std = evaluate_policy( model, model.get_env(), n_eval_episodes=10)
     with open("logs.csv", "a") as f:
-        f.write(f"{save_path}, d=1.0, {get_steps(total_timesteps)}, {mean}, {std}\n")
+        f.write(f"{save_path}, d=10, {get_steps(total_timesteps)}, {mean}, {std}\n")
     # run.finish()
         
 
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("timesteps", help="Order of magnitude of timesteps. default=4" , type=int, default=4)
-    t = parser.parse_args().timesteps
+    t = parser.parse_args().timesteps  # 7 : 3 hours
     train(get_save_path(), EndlessRunnerEnv, 
           total_timesteps=10**t, checkpoints= t > 5)
     

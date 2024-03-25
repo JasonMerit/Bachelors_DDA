@@ -27,19 +27,7 @@ class EndlessRunner():
         # List of platforms that are moved every tick
         self.platforms = [self.construct_platform(Player.init_pos, level=self.level)]
         self.platforms[0].outline() # debug
-        
-        # self.platforms += self._create_level()
-        # self.platforms += self._create_level()
         self.fill_platforms()
-        # self._add_platform()
-        # assert none of the platforms overlap
-        # for i in range(len(self.platforms) - 1):
-        #     assert self.platforms[i].right <= self.platforms[i + 1].left, (self.platforms[i], self.platforms[i + 1])
-        # quit()
-        
-        # self.player.platforms = self.platforms  # Dirty coupling
-        # self.player.current_platform = self.platforms[0]  # Dirty coupling
-        # self.player.next_platform = self.platforms[1]  # Dirty coupling
 
         # Player
         self.player.reset(self.platforms)
@@ -58,6 +46,11 @@ class EndlessRunner():
 
     def close(self):
         pass  # Implemented in Display
+
+    def set_difficulty(self, difficulty):
+        """Given a difficulty between 0 and 10, set the difficulty of the game."""
+        assert difficulty in range(11), "Difficulty must be integer between 0 and 10."
+        self.game_master.difficulty = difficulty / 10
     
     def _update_positions(self):
         """Update player and platforms positions. Also remove off screen platform."""

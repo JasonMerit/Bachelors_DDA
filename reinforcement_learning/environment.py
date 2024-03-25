@@ -12,6 +12,7 @@ class EndlessRunnerEnv(gym.Env):
 
     def __init__(self, render=False, truncated=True):
         self.game = Display() if render else EndlessRunner()
+        self.game.set_difficulty(10)
         self.action_space = spaces.Discrete(4)
         # self.observation_space = spaces.Discrete(1)
         self.observation_space = spaces.Box(low=0, high=1000, shape=(3,), dtype=np.float16)

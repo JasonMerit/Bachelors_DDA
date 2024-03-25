@@ -34,9 +34,6 @@ class GameMaster():
     def seed(self, seed):
         random.seed(seed)
         np.random.seed(seed)
-    
-    def set_difficulty(self, difficulty):
-        self.difficulty = difficulty
 
     def get_level(self, start: Tuple[int, int], count: int):
         """Returns a level with a given number of platforms.
@@ -76,6 +73,7 @@ class GameMaster():
         y_new = y + self.difficulty * dy
 
         T = self._fly_time(y, y_new)
-        x_new = x + int(self.difficulty * T * self.speed)
+        dx = random.randrange(0, int(T * self.speed))
+        x_new = x + 45  + self.difficulty * dx
 
         return x_new, int(y_new)

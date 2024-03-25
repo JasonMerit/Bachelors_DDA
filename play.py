@@ -4,6 +4,7 @@ from game.display import Display
 class EndlessRunnerApp():
     def __init__(self):
         self.game = Display()
+        self.game.set_difficulty(10)
 
         self.key_actions = {
             "quit": self.quit, 
