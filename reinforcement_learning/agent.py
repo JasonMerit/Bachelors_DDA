@@ -1,51 +1,48 @@
+from math import sqrt
 
 class CheaterAgent():
+    
     from game.config import Config
-    from game.entities import Player, Platform
+    from game.entities import Platform
+    from game.player import Player
 
     player_left = Player.init_pos[0] - Player.size
+
     speed = Platform.scroll_speed
+    jump_speed = Player.jump_speed
+    air_times = Player.jump_times  # [max_hold_frames, max_hold_frames // 2, 0] 
+    jump_times = Player.jump_times
+    max_hold_frames = Player.max_hold_frames
+    gravity = Player.gravity   
     
+    peak = jump_speed ** 2 / (2 * gravity)
+    jump_height = jump_speed * max_hold_frames + peak
+    peak_time = speed / gravity
+
     def __init__(self, verbose=False):
         self.verbose = verbose
 
-    def predict(self, state):
-        action = 0
-        # is_floor, x1, y1, x2, y2 = state
-        x1, y1, x2, y2 = state
-
-        # cast to int
-        # x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-
-        # Stay if not on floor or not close to edge
-        # print(x1)
-        if self.player_left + self.speed < x1:  
-        # if not is_floor or self.player_left + self.speed < x1:  
-            return action
+    def predict(self, obs, state=None, episode_start=None, deterministic=True):
+        # return [0], None
+        x1, dx, dy = obs[0]
         
-        # print(x1 - self.speed, self.player_left)
-        # quit()
-        dx, dy = x2 - x1, y2 - y1
+        # time to reach x1 + dx (next platform)
+        t_travel = (x1 + dx) / self.speed
 
-        # Next platform is connected to the current platform
-        if dx == dy == 0:  
-            return action
-        
-        return 3
-        if dy > 0:
-            return 3
+        # first jump to exceed t_travel in time is used
+        # d = self.jump_speed**2 + 2 * self.gravity * (self.jump_speed * self.max_hold_frames - dy)
+        # t = self.max_hold_frames + (self.jump_speed + sqrt(d)) / self.gravity
+        # if t > t_travel:
+        #     return [3], None
+        # return [0], None
 
-        # Action function
-        f = dy + dx // 2
-
-        if f > 140:
-            action = 3
-        elif f < 0:
-            action = 1
-        else:
-            action = 2
-
-        if self.verbose:
-            print(f, action)
-        return action
+        for i, hold_time in enumerate(self.jump_times[::-1]):
+            hold_time += 1
+            d = self.jump_speed**2 + 2 * self.gravity * (self.jump_speed * hold_time - dy)
+            if d < 0:
+                continue
+            t = hold_time + (self.jump_speed + sqrt(d)) / self.gravity
+            if t > t_travel:
+                return [i + 1], None
+        return [0], None
     

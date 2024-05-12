@@ -1,0 +1,22 @@
+Env, model, time, n_envs, n_episodes, path, mean, std
+EndlessRunnerEnv, 0.82, 1, 10, models/Random
+DummyVec, 0.84, 10, 10, models/Random
+DummyVec, 1.10, 10, 100, models/Random
+EndlessRunnerEnv, 1.52, 10, 100, models/Random
+EndlessRunnerEnv, 11.90, 100, 1000, models/Random
+DummyVecEnv, 2.13, 100, 1000, models/Random
+EndlessRunnerEnv, 10.70, 100, 1000, models/Random
+EndlessRunnerEnv, CheaterAgent, 167.67, 100, 1000, models/Random
+EndlessRunnerEnv, PPO, 11.02, 100, 1000, models/Random
+EndlessRunnerEnv, PPO, 1.09, 100, 50, models/Random
+EndlessRunnerEnv, PPO, 1.05, 50, 50, models/Random
+EndlessRunnerEnv, PPO, 1.05, 10, 50, models/Random
+DummyVecEnv, PPO, 20.46, 10, 50, models/04_01/PPO_00_30/_14000000_steps, 1080.78, 794.17
+DummyVecEnv, PPO, 7.41, 50, 50, models/04_01/PPO_00_30/_14000000_steps, 1318.68, 913.80
+DummyVecEnv, PPO, 13.28, 10, 50, models/04_01/PPO_00_30/_14000000_steps, 1080.78, 794.17
+DummyVecEnv, PPO, 9.68, 100, 50, models/04_01/PPO_00_30/_14000000_steps, 1213.16, 902.13
+DummyVecEnv, PPO, 9.14, 25, 50, models/04_01/PPO_00_30/_14000000_steps, 1365.72, 915.08
+DummyVecEnv, PPO, 9.52, 25, 50, models/04_01/PPO_00_30/_14000000_steps, 1365.72, 915.08
+DummyVecEnv, PPO, 6.25, 50, 50, models/04_01/PPO_00_30/_14000000_steps, 1318.68, 913.80
+DummyVecEnv, PPO, 9.56, 2, 10, models/04_01/PPO_00_30/_14000000_steps, 1447.0, 919.69
+SubprocVecEnv, PPO, 14.85, 2, 10, models/04_01/PPO_00_30/_14000000_steps, 1323.0, 783.77

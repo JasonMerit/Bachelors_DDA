@@ -2,9 +2,10 @@ from game.controls import Controller
 from game.display import Display
 
 class EndlessRunnerApp():
-    def __init__(self):
+    def __init__(self, difficulty):
         self.game = Display()
-        self.game.set_difficulty(10)
+        self.game.set_difficulty((difficulty, 0))
+        
 
         self.key_actions = {
             "quit": self.quit, 
@@ -28,7 +29,8 @@ class EndlessRunnerApp():
         self.paused = not self.paused
     
     def play(self):
-        self.game.reset(seed=42)  # Seed for reproducibility
+        self.game.reset()  # Seed for reproducibility
+        # self.game.reset(seed=2)  # Seed for reproducibility
         
         while self.playing:
             # Pausing the game
@@ -36,17 +38,17 @@ class EndlessRunnerApp():
                 self.controller.handle_events()
 
             self.controller.handle_events()
-            done = self.game.tick()            
-            if done:
+
+            if self.game.tick() is True:
                 self.game.reset()
             
             
-            self.game.render(debug=False)
+            self.game.render()
         
         # history = self.game.history
         # Display.play_recording(history)
 
 
 if __name__ == "__main__":
-    app = EndlessRunnerApp()
+    app = EndlessRunnerApp(1)
     app.play()

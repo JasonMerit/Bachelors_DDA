@@ -1,57 +1,61 @@
+from typing import Tuple
+
 from game.game_master import GameMaster
 from game.config import Config
 from game.util import *
-from game.entities import Player, Platform
+from game.player import Player
+from game.entities import Platform, Flat, Slope
 
 
 class EndlessRunner():
+    margin = 200  # Offset from right screen for smooth scrolling
 
     def __init__(self):
         self.game_master = GameMaster()
-        self.max_height, self.min_height = Config.HEIGHT - 100, 100
-        self.min_gap = 50
-        self.rest_width = 300 if not Config.FLAT else 100000
+        self.max_height, self.min_height = Config.height - 100, 100
+        self.min_gap = 45
 
         # Player
         self.player : Player = self.construct_player()
         self.deaths = -1
+
+        self.history = []  # Display
+    
+    def set_difficulty(self, difficulty):
+        self.difficulty = difficulty
+        self.game_master.set_difficulty(difficulty)
     
     def reset(self, seed=None):
-        if seed is not None:
-            self.game_master.seed(seed)
+        # if seed is not None:
+        #     self.game_master.seed(seed)
         self.deaths += 1
         self.score = 0
         self.level = 1
-    
 
         # List of platforms that are moved every tick
-        self.platforms = [self.construct_platform(Player.init_pos, level=self.level)]
+        self.platforms = [self.construct_platform(Player.init_pos, flat=True)]
         self.platforms[0].outline() # debug
-        self.fill_platforms()
+        self._fill_platforms()
 
         # Player
         self.player.reset(self.platforms)
+    
+    # def get_random_state(self):
+    #     return self.game_master.get_state()
 
     def tick(self):
         self._update_positions()
 
         if self.player.tick() is True:
+            if Config.GOD:
+                self.deaths += 1
+                return False
             return True  # Terminated
         
         self.score += 1  # Increase score every tick
         return False  # Terminated (replace all self.restart() with return True)
 
-    def render(self, state=None):
-        pass  # Implemented in Display
 
-    def close(self):
-        pass  # Implemented in Display
-
-    def set_difficulty(self, difficulty):
-        """Given a difficulty between 0 and 10, set the difficulty of the game."""
-        assert difficulty in range(11), "Difficulty must be integer between 0 and 10."
-        self.game_master.difficulty = difficulty / 10
-    
     def _update_positions(self):
         """Update player and platforms positions. Also remove off screen platform."""
 
@@ -62,15 +66,12 @@ class EndlessRunner():
             if Config.VERBOSE:
                 print("Removing", self.platforms[0])
             
-            # if self.platforms[0].is_rest_area:
-            #     self.platforms += self._create_level()
-                
             self.remove_platform()
             self._add_platform()
     
-    def fill_platforms(self):
+    def _fill_platforms(self):
         """Fill the screen with platforms."""
-        while self.platforms[-1].right < Config.WIDTH:
+        while self.platforms[-1].right < Config.width + self.margin:
             self._add_platform()
         self._add_platform()
 
@@ -80,21 +81,21 @@ class EndlessRunner():
         platform = self.game_master.next_platform(*start)
         self.platforms.append(self.construct_platform(*platform))
 
-    def _create_level(self, count=3):
-        """Create a new level of platforms and rest area.
-        :param count: number of platforms in the level
-        :return: list of platforms
-        """
-        self.level += 1
-        start = self.platforms[-1].topright
-        platforms = self.game_master.get_level(start, count)
-        res = []
-        for plat in platforms[:-1]:
-            topleft, width = plat
-            res.append(self.construct_platform(topleft, width))
-        platforms[-1] = platforms[-1][0], self.rest_width
-        res.append(self.construct_platform(*platforms[-1], level=self.level))
-        return res
+    # def _create_level(self, count=3):
+    #     """Create a new level of platforms and rest area.
+    #     :param count: number of platforms in the level
+    #     :return: list of platforms
+    #     """
+    #     self.level += 1
+    #     start = self.platforms[-1].topright
+    #     platforms = self.game_master.get_level(start, count)
+    #     res = []
+    #     for plat in platforms[:-1]:
+    #         topleft, width = plat
+    #         res.append(self.construct_platform(topleft, width))
+    #     platforms[-1] = platforms[-1][0], self.rest_width
+    #     res.append(self.construct_platform(*platforms[-1]))
+    #     return res
         
     ### ===== Player methods ===== ###
     def jump(self):
@@ -112,11 +113,17 @@ class EndlessRunner():
             self.player.jump(action)
 
     ### ===== Inherited by Display ===== ###
+    def render(self, state=None, step_count=0, debug=False):
+        pass  # Implemented in Display
+
+    def close(self):
+        pass  # Implemented in Display
+
     def construct_player(self):
         return Player()
     
-    def construct_platform(self, topleft, width=300, level=0):
-        return Platform(topleft, width, level=level)
+    def construct_platform(self, topleft, width=300, flat=True) -> Platform:
+        return Flat(topleft, width)
 
     def remove_platform(self):
         self.platforms.pop(0)

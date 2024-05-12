@@ -1,4 +1,4 @@
-model, comment, time_steps, mean_reward, std_reward
+model, comment, time_steps, secs, mean_reward, std_reward, ppo_seed
 models/03_22/PPO_08_49, 10000
 models/03_22/PPO_08_51, 10000
 models/03_22/PPO_08_54, 10000
@@ -9,3 +9,63 @@ models/03_22/PPO_10_47, 10, -87.3, 10.178899744078432
 models/03_22/PPO_10_48/_3000000_steps, 1
 models/03_22/PPO_10_48, eh?, 1.0e7, 855.8, 277.92329877144164
 models/03_22/PPO_19_16, d=1.0, 1.0e6, 1000.0, 0.0
+models/03_25/PPO_08_31, d=10, 1.0e7, 2.6, 33.05813061865416
+models/03_25/PPO_20_01, d=10 (but stupid), 1.0e6, 11.8, 52.022687358497734
+models/03_26/PPO_15_40, d=10 pilot to next, 1.0e5, -71.5, 27.84331158465171
+models/03_26/PPO_15_45, d=10, 1.0e6, 599.6, 457.938467482259
+models/03_26/PPO_16_50, sqrt difficulty, 1.0e7, 528.8, 329.2691300441024
+models/03_26/PPO_21_02, Pilot - see next dy, 1.0e5, -41.8, 17.95995545651492
+models/03_26/PPO_21_07, See next dy (useless?), 1.0e7, 379.2, 248.47808756508087
+models/03_27/PPO_00_21, Pilot - see next dx, 1.0e5, 71.8, 68.86334293366826
+models/03_27/PPO_00_24, Pilot2 - see next dx, 1.0e6, 181.7, 289.0280436220679
+models/03_27/PPO_21_18, Two actions (wait - jump 2), 1.0e6, 25.2, 44.548400644692066
+models/03_27/PPO_21_41, Same as last - but one extra hidden layer, 1.0e6, 278.4, 280.2460347623138
+models/03_27/PPO_22_12, Testing VecEnv, 1.0e5, -20.7, 36.24099888248115
+models/03_31/PPO_14_45, COMMENT, 1.0e5, -41.3, 22.054704713507274
+models/03_31/PPO_14_55, 10 DummyVec, 1.0e5, 63.95, -41.3, 22.054704713507274
+models/03_31/PPO_14_57, 5 DummyVec, 1.0e5, 72.74, -57.3, 15.330035877322661
+models/03_31/PPO_14_59, 10 DummyVec, 1.0e5, 66.27, -41.3, 22.054704713507274
+models/03_31/PPO_15_01, 2 DummyVec, 1.0e5, 92.69, -37.1, 15.946472964263917
+models/03_31/PPO_15_03, 4 DummyVec, 1.0e5, 79.39, -60.6, 11.612062693595828
+models/03_31/PPO_15_05, 3 DummyVec, 1.0e5, 81.30, -65.2, 13.181805642627264
+models/03_31/PPO_15_07, 20 DummyVec, 1.0e5, 74.83, -91.7, 9.59218431849597
+models/03_31/PPO_15_09, 50 DummyVec, 1.0e5, 60.72, -95.9, 1.1357816691600546
+models/03_31/PPO_15_16, 10 make_vec_env, 1.0e5, 64.06, -41.3, 22.054704713507274
+models/03_31/PPO_15_18, 50 make_vec_env, 1.0e5, 60.21, -95.9, 1.1357816691600546
+models/03_31/PPO_15_21, 1 make_vec_env, 1.0e5, 121.14, -20.7, 36.24099888248115
+models/03_31/PPO_16_39, 10 make_vec_env, 1.0e5, 68.13, -55.8, 29.63
+models/03_31/PPO_16_42, Pretty well, 1.0e6, 583.61, 1000.0, 0.00
+models/03_31/PPO_17_26, COMMENT, 1.0e5, 67.75, -55.8, 29.63
+models/03_31/PPO_17_30, COMMENT, 1.0e5, 142.12, 557.7, 332.89
+models/03_31/PPO_17_35, COMMENT, 1.0e5, 65.03, -55.8, 29.63
+models/03_31/PPO_17_37, COMMENT, 1.0e6, 591.14, 2500.0, 0.00
+models/03_31/PPO_17_57, COMMENT, 1.0e6, 1224.38, 2500.0, 0.00
+models/03_31/PPO_22_39, Thresholding, 1.0e6, 128.87, 1554.6, 957.82
+models/03_31/PPO_22_49, Thresholding (determinitstic), 1.0e6, 1158.73, 2500.0, 0.00
+models/04_01/PPO_00_30, COMMENT, 1.0e8, 110505.37, 885.6, 603.89
+models/04_03/PPO_17_54, COMMENT, 1.0e2, 13.80, -6.2, 0.75
+models/04_03/PPO_17_57, COMMENT, 1.0e2, 10.32, 118.6, 47.65
+models/04_03/PPO_17_58, COMMENT, 1.0e2, 7.96, 56.0, 0.00
+models/04_03/PPO_18_02, COMMENT, 1.0e5, 284.30, 174.4, 179.52
+models/04_03/PPO_18_11, COMMENT, 1.0e2, 22.90, 13.6, 9.31
+models/04_03/PPO_18_12, COMMENT, 1.0e4, 23.22, 13.6, 9.31
+models/04_03/PPO_18_12, 16.97 min (10 vecenvs), 1.0e6, 1014.53, 74.5, 23.90
+models/04_03/PPO_18_30, 44.14 min (1 env), 1.0e6, 2649.20, 170.5, 98.92
+models/04_03/PPO_20_00, 54.7 min (10 veencs), 2.3e6, 3280.43, 161.4, 105.70
+models/04_04/PPO_07_31, SO LONG, 1.0e6, 4154.19, 861.08, 922.47
+models/04_13/PPO_13_38, Tile coding pilot, 1.0e5, 467.64, 56.0, 0.00
+models/04_13/PPO_14_04, Tile coding no change, 1.0e6, 5573.86, 55.0, 8.77
+models/04_13/PPO_16_26, COMMENT, 1.0e3, 10.27, 10.0, 0.00
+models/04_13/PPO_16_26, COMMENT, 1.0e3, 10.73, 10.0, 0.00
+models/04_13/PPO_16_27, COMMENT, 1.0e3, 10.93, 10.0, 0.00
+models/04_13/PPO_17_10, COMMENT, 1.0e3, 12.38, 10.0, 0.00
+models/04_13/PPO_17_13, COMMENT, 1.0e3, 13.15, 10.0, 0.00
+models/04_13/PPO_17_14, COMMENT, 1.0e3, 12.90, 10.0, 0.00
+models/04_14/PPO_07_08, Endless runner varynig difficulty on reset, 1.0e7, 40496.42, 336.98, 689.85, 521
+models/04_14/PPO_23_07, Tile coding final, 1.0e7, 45617.25, 53.9, 14.32, 521
+models/04_18/PPO_00_05, (MAIN) Reduce noise by not randomly offsetting, 1.0e7, 27565.70, 521
+models/04_19/PPO_12_46, Linear difficulty (call_freq = 10**4), 1.0e7, 16250.10, 321
+models/05_05/PPO_14_01, 4 actions, 1.0e7, 11151.93, 421
+models/05_08/PPO_12_50, 4 actions (only d in [1 2 3]), 1.0e6, 1116.61, 1002
+models/05_08/PPO_13_17, Binary repeat (beginning poor performance (dummyenv), 1.0e7, 11587.89, 1002
+models/05_08/PPO_16_31, Binary (obs = x1), 1.0e6, 1225.91, 1002

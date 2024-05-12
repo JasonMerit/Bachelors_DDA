@@ -17,7 +17,7 @@ def end():
 def magnitude(n: int) -> int:
     return int(floor(log10(abs(n))))
 
-def first_two_digits(n: int) -> int:
+def first_two_digits(n: int) -> float:
     digits = str(n)[:2]
     return int(digits) / 10
 

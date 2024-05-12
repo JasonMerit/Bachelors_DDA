@@ -1,13 +1,23 @@
+# Script when run autoclicks left mouse button until 'ESC' is pressed
 
-import numpy as np
-path = "models/03_25/PPO_08_27/evaluations.npz"
-data = np.load(path)
-print(data.files)
-print(data["timesteps"])
-print(data["results"])
-print(data["ep_lengths"])
-print(data["timesteps"].shape)
-print(data["results"].shape)
-print(data["ep_lengths"].shape)
+import pyautogui
+import keyboard
+import time
 
-print(data)
+# while True:
+#     # Double click
+#     pyautogui.click(clicks=2)
+#     time.sleep(0.1)
+#     # exit when pressing esc, even when not focused
+#     if keyboard.is_pressed('esc'):
+#         break
+
+# press left arrow key
+
+# alt tab
+# pyautogui.hotkey('alt', 'tab')
+# left click
+pyautogui.click()
+pyautogui.press('right', 3, 0.1)
+
+# pyautogui.hotkey('alt', 'tab')

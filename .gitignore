@@ -7,4 +7,6 @@ assets
 export
 wandb
 models
-dda_env
+
+# ignore all .pkl files
+deaths.pkl
