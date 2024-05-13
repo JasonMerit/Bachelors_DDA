@@ -1,10 +1,10 @@
-from typing import Tuple
+from typing import Tuple, List
 
 from game.game_master import GameMaster
 from game.config import Config
 from game.util import *
 from game.player import Player
-from game.entities import Platform, Flat, Slope
+from game.entities import Platform, Flat, Slope, Obstacle
 
 
 class EndlessRunner():
@@ -32,13 +32,17 @@ class EndlessRunner():
         self.score = 0
         self.level = 1
 
+        # Obstacles
+        self.obstacles : List[Obstacle] = [] 
+
         # List of platforms that are moved every tick
         self.platforms = [self.construct_platform(Player.init_pos, flat=True)]
         self.platforms[0].outline() # debug
         self._fill_platforms()
 
         # Player
-        self.player.reset(self.platforms)
+        self.player.reset(self.platforms, self.obstacles)
+        
     
     # def get_random_state(self):
     #     return self.game_master.get_state()
@@ -61,6 +65,9 @@ class EndlessRunner():
 
         for platform in self.platforms:
             platform.move()
+
+        for obstacle in self.obstacles:
+            obstacle.move()
         
         if self.platforms[0].right < 0:
             if Config.VERBOSE:
@@ -78,25 +85,18 @@ class EndlessRunner():
     def _add_platform(self):
         """Add a new platform to the end of the list."""
         start = self.platforms[-1].topright
-        platform = self.game_master.next_platform(*start)
-        self.platforms.append(self.construct_platform(*platform))
+        platform_ = self.game_master.next_platform(*start)
+        platform = self.construct_platform(*platform_)
+        self.platforms.append(platform)
+        self._add_obstacle(platform)
+    
+    def _add_obstacle(self, platform):
+        return
+        obstacle = self.construct_obstacle(platform)
+        self.obstacles.append(obstacle)
+        platform.obstacle = obstacle
 
-    # def _create_level(self, count=3):
-    #     """Create a new level of platforms and rest area.
-    #     :param count: number of platforms in the level
-    #     :return: list of platforms
-    #     """
-    #     self.level += 1
-    #     start = self.platforms[-1].topright
-    #     platforms = self.game_master.get_level(start, count)
-    #     res = []
-    #     for plat in platforms[:-1]:
-    #         topleft, width = plat
-    #         res.append(self.construct_platform(topleft, width))
-    #     platforms[-1] = platforms[-1][0], self.rest_width
-    #     res.append(self.construct_platform(*platforms[-1]))
-    #     return res
-        
+
     ### ===== Player methods ===== ###
     def jump(self):
         if self.player.is_floor:
@@ -124,7 +124,13 @@ class EndlessRunner():
     
     def construct_platform(self, topleft, width=300, flat=True) -> Platform:
         return Flat(topleft, width)
+    
+    def construct_obstacle(self, platform) -> Obstacle:
+        return Obstacle(platform)
 
     def remove_platform(self):
-        self.platforms.pop(0)
+        platform = self.platforms.pop(0)
+        if platform.obstacle:
+            self.obstacles.pop(0)
+    
 

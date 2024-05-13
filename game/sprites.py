@@ -5,7 +5,7 @@ from pygame.surface import Surface
 from pygame.sprite import Sprite
 from pygame.color import Color
 
-from game.endless_runner import Platform, Flat, Slope, Player
+from game.endless_runner import Platform, Flat, Slope, Player, Obstacle
 from game.config import Config
 
 def blit_rotate(surf, image, topleft, angle):
@@ -126,6 +126,17 @@ class _SlopeSprite(Slope, RectSprite):
         tip = width * self.slope * int(self.angle > 0)  # Slope height
         self.draw_top = Config.height - self.top - tip
 
+        RectSprite.__init__(self)
+
+
+class ObstacleSprite(Obstacle, RectSprite):
+    def __init__(self, platform):
+        super().__init__(platform)
+        self.surface = pg.Surface((self.width, self.height))
+        rect = self.surface.get_rect()
+        pg.draw.rect(self.surface, (255, 0, 0), rect)
+        self.draw_top = Config.height - self.top
+        
         RectSprite.__init__(self)
 
 import numpy as np

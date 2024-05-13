@@ -75,7 +75,7 @@ def train(save_path: str, total_timesteps: float, Env):
     env = make_vec_env(Env, 10)  # Main
     # env = Env(render=True)
     
-    ppo_seed = 1002
+    ppo_seed = 31
     model = PPO("MlpPolicy", env,
                 policy_kwargs=policy_kwargs, seed=ppo_seed)  # Seed for reproducibility
     print("Learning")
@@ -89,7 +89,7 @@ def train(save_path: str, total_timesteps: float, Env):
     # Final eval
     # mean, std = evaluate_model(save_path, Env)
     with open("logs.csv", "a") as f:
-        f.write(f"{save_path}, Binary (obs = x1), {get_steps(total_timesteps)}, {time.time() - start:.2f}, {ppo_seed}\n")
+        f.write(f"{save_path}, Scalar (Longer), {get_steps(total_timesteps)}, {time.time() - start:.2f}, {ppo_seed}\n")
         
 
 def get_save_path():

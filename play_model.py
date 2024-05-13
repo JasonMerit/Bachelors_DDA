@@ -1,5 +1,6 @@
 import numpy as np
 from stable_baselines3 import PPO
+from icecream import ic
 
 from reinforcement_learning.environment import EndlessRunnerEnv, TileER, Parrot
 from game.controls import Controller
@@ -44,14 +45,14 @@ class PlayModel():
         self.env._render = not self.env._render
 
     def increase_difficulty(self):
-        new_diff = (self.env.difficulty[0] + 1) % 11
-        self.env.game.set_difficulty(new_diff, self.env.difficulty[1])
+        new_diff = (self.env.game.difficulty[0] + 1) % 11
+        self.env.game.set_difficulty((new_diff, self.env.game.difficulty[1]))
 
     def decrease_difficulty(self):
-        new_diff = (self.env.difficulty[0]  - 1)
+        new_diff = (self.env.game.difficulty[0] - 1)
         if new_diff < 0:
             new_diff = 10
-        self.env.game.set_difficulty(new_diff, self.env.difficulty[1])
+        self.env.game.set_difficulty((new_diff, self.env.game.difficulty[1]))
  
     def play(self):
         model = self.model
@@ -68,9 +69,9 @@ class PlayModel():
                 self.controller.handle_events()
                 action, _ = model.predict(obs, deterministic=True)
                 obs, reward, term, trunc, _ = env.step(action)
+                ic(obs)
                 total_reward += reward
                 done = term or trunc
-                env.render(obs)
             rewards[episode] = total_reward
             
             # store the history of the game
@@ -103,9 +104,10 @@ if __name__ == "__main__":
     # path = "models/05_05/PPO_22_17/_90600000_steps.zip"
     path = "models/05_05/PPO_22_17/_44100000_steps.zip"
     path = "models/05_08/PPO_12_50.zip"
-    path = "models/05_08/PPO_16_31/_100000_steps.zip"
+    path = "models/05_12/PPO_14_26/_10000000_steps.zip"  # PERCFECT
+    path = "models/05_13/PPO_21_25/_100000_steps.zip"
     print(f"Playing [{path}] in [{Env.__name__}]")
 
-    play_model = PlayModel(path, Env, (2, 0))
+    play_model = PlayModel(path, Env, (6, 0))
     play_model.play()
     

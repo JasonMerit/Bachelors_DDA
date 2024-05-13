@@ -3,7 +3,7 @@ from math import sqrt, sin, cos, radians
 
 from game.util import *
 from game.config import Config
-from game.entities import Platform, Slope
+from game.entities import Platform, Slope, Obstacle
 
 class Player():
     """x and y define position, representing the BOTTOM RIGHT corner of the player.
@@ -39,7 +39,7 @@ class Player():
         self.cleared_platforms = 0
         self._is_floor = True
 
-    def reset(self, platforms : List[Platform]):
+    def reset(self, platforms : List[Platform], obstacles : List[Obstacle]):
         self.platforms = platforms
         self.current_platform, self.next_platform = platforms[:2]
         self.x, self.y = self.init_pos
@@ -177,6 +177,8 @@ class Player():
         # Floor collision. Safe, because x is always within the platform
         if platform:
             self._floor_check(platform)
+            if self._obstacle_collision(platform):
+                return True
         
         # Check for obstacle collision
             # if not GOD and pg.sprite.spritecollide(self.player, self.obstacle_sprites, False):
@@ -190,7 +192,15 @@ class Player():
     def _is_colliding(self, platform):
         return self.y + Config.grace_add < platform.top
     
+    def _obstacle_collision(self, platform):
+        if platform.obstacle is None:
+            return
+        
+        return self.left < platform.obstacle.right and \
+               self.right > platform.obstacle.left and \
+                self.y < platform.obstacle.top
+
+    
     # keks = 0
     def _floor_check(self, platform: Platform):
         platform.offset_player(self)
-        pass

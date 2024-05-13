@@ -10,6 +10,7 @@ class Platform(ABC):
         self.width = width
         Platform.id += 1
         self.id = Platform.id
+        self.obstacle = None
     
     @property 
     def topleft(self):
@@ -96,3 +97,25 @@ class Slope(Platform):
             player.y = top
             player.is_floor = True
             player.angle = -self.angle
+
+
+class Obstacle():
+    scroll_speed = 5
+    width = 30
+    height = 20
+    
+    def __init__(self, platform):
+        self.x = platform.right - platform.width // 2 - self.width // 2
+        self.bot = platform.top
+        self.top = self.bot + self.height
+
+    @property
+    def left(self):
+        return self.x
+    
+    @property
+    def right(self):
+        return self.x + self.width
+
+    def move(self):
+        self.x -= self.scroll_speed

@@ -14,16 +14,22 @@ class EndlessRunnerEnv(gym.Env):
     agent to interact with the game. Display enherits from EndlessRunner, so it
     can be used to run the game with rendering."""
 
-    action_space = spaces.Discrete(2)  # Binary (Update step too)
-    # action_space = spaces.Discrete(4)  # Multiple
+    # action_space = spaces.Discrete(2)  # Binary (Update step too)
+    action_space = spaces.Discrete(4)  # Multiple
     
+    # x1, dx, dy
     # Update _step too
     # observation_space = spaces.Box(low=np.array([0.0, 45.0, -400], dtype=np.float16), 
     #                                high=np.array([325.0, 210.0, 210.0], dtype=np.float16), 
     #                                shape=(3,), dtype=np.float16)
+    # x1
     observation_space = spaces.Box(low=np.array([0.0], dtype=np.float16), 
                                    high=np.array([325.0], dtype=np.float16), 
                                    shape=(1,), dtype=np.float16)
+    # x1, dist_obstacle
+    # observation_space = spaces.Box(low=np.array([0.0, 0.0], dtype=np.float16), 
+    #                             high=np.array([325.0, 300.0], dtype=np.float16), 
+    #                             shape=(2,), dtype=np.float16)
     # x0 in [0.0, 325.0] 
     # dx in [45.0, 209.0]
     # dy in [-399.0, 205.0]
@@ -51,8 +57,8 @@ class EndlessRunnerEnv(gym.Env):
         self.step_count += 1
         # cleared_platforms = self.game.player.cleared_platforms
         if action > 0:
-            self.game.take_action(2)              # Binary
-            # self.game.take_action(action - 1)     # Multiple
+            # self.game.take_action(2)              # Binary
+            self.game.take_action(action - 1)     # Multiple
         
         terminated = self.game.tick()
         self.render()
@@ -101,13 +107,25 @@ class EndlessRunnerEnv(gym.Env):
             plat1 = self.game.platforms[index]
             assert index < len(self.game.platforms), "Player is not on a platform"
         plat2 = self.game.platforms[index + 1]
+        
 
         topright = plat1.topright
         topleft = plat2.topleft
         x1 = topright[0] - self.game.player.left
         dx = topleft[0] - topright[0]
         dy = topleft[1] - topright[1]
+        
+        # Search for next obstacle
+        dist_obstacle = 0
+        for obstacle in self.game.obstacles:
+            if obstacle.left > self.game.player.left:
+                dist_obstacle = obstacle.left - self.game.player.left
+                break
+        # dist_obstacle = self.game.obstacles[0].left - self.game.player.left \
+        #     if len(self.game.obstacles) > 0 else 0
+        
         return np.array([x1]).astype(np.float16)  # Scalar
+        return np.array([x1, dist_obstacle]).astype(np.float16)  # Scalar + obstacle
         return np.array([x1, dx, dy]).astype(np.float16)
     
     # def get_random_state(self):

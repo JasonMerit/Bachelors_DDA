@@ -126,7 +126,7 @@ def create_difficulty_matrix(model_path: str):
     #     return
     for i in range(1, 11):
         for j in range(1, 11):
-            mean, std = evaluate_model(model_path, EndlessRunnerEnv, difficulty=(i, j), n_episodes=50)
+            mean, std = evaluate_model(model_path, EndlessRunnerEnv, difficulty=(i, j), n_episodes=20)
             with open(f"{model_path[:-4]}_diff_mat.csv", "a") as f:
                 # f.write(f"{i}, {j}, {scores}\n")
                 f.write(f"{i}, {j}, {mean:.2f}, {std:.2f}\n")

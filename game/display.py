@@ -8,7 +8,7 @@ from collections import deque
 
 from game.endless_runner import EndlessRunner
 from game.config import Config
-from game.sprites import FlatSprite, SlopeSprite, PlayerSprite, _SlopeSprite
+from game.sprites import FlatSprite, SlopeSprite, PlayerSprite, _SlopeSprite, ObstacleSprite
 
 FONT = "game/ROCK.TTF"
         
@@ -139,8 +139,13 @@ class Display(EndlessRunner):
     def remove_platform(self):
         platform = self.platforms.pop(0)
         self.sprites.remove(platform)
+        if platform.obstacle:
+            self.sprites.remove(platform.obstacle)
+            self.obstacles.pop(0)
 
-
-
+    def construct_obstacle(self, platform) -> ObstacleSprite:
+        obstacle_sprite = ObstacleSprite(platform)
+        self.sprites.add(obstacle_sprite)
+        return obstacle_sprite
 
 

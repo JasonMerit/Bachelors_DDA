@@ -19,7 +19,7 @@ class Config:
     DENSITY = 10 # Number of hatches
     DURATION = 5 # Length of rhythm in seconds (5, 10, 15, 20)
 
-    FPS: int = 100# 60 # Frames per second (too high, and tapping wlil cross frames)
+    FPS: int = 60# 60 # Frames per second (too high, and tapping wlil cross frames)
     # DT = 1 / FPS
     GOD = 0
     AGENT = 1

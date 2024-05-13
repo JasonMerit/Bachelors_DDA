@@ -69,3 +69,5 @@ models/05_05/PPO_14_01, 4 actions, 1.0e7, 11151.93, 421
 models/05_08/PPO_12_50, 4 actions (only d in [1 2 3]), 1.0e6, 1116.61, 1002
 models/05_08/PPO_13_17, Binary repeat (beginning poor performance (dummyenv), 1.0e7, 11587.89, 1002
 models/05_08/PPO_16_31, Binary (obs = x1), 1.0e6, 1225.91, 1002
+models/05_12/PPO_14_26, (PERFECT) Scalar obs (Longer), 1.0e7, 11103.67, 1002
+models/05_13/PPO_21_29, Obstacles (two obs x1 + dist_obstacle), 1.0e7, 11195.53, 31
