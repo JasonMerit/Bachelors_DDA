@@ -9,9 +9,6 @@ class Player():
     """x and y define position, representing the BOTTOM RIGHT corner of the player.
     Since platform uses TOP left corner, this allows for easy collision detection.
     TODO: replace with vector when dashing"""
-    # platforms = []  # Set by EndlessRunner
-    # current_platform = None
-    # next_platform = None
 
     init_pos = Config.height // 10, 100
     gravity = 2
@@ -29,11 +26,6 @@ class Player():
     angle = 0
     angle_speed = 0
     rotations = 2
-
-    # pre computations for physics constraints
-    # max_jump_height = jump_speed * max_hold_frames + 0.5 * jump_speed ** 2 / gravity
-    # up_time = jump_speed / gravity + max_hold_frames  # Increasing position time
-    # fly_time = lambda self, delta_y: self.up_time + sqrt(2 * delta_y / self.gravity)
 
     def __init__(self):
         self.cleared_platforms = 0

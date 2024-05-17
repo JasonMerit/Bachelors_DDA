@@ -24,8 +24,13 @@ class CheaterAgent():
 
     def predict(self, obs, state=None, episode_start=None, deterministic=True):
         # return [0], None
-        x1, dx, dy = obs[0]
+        x1 = obs[0][0]
+        # x1, dx, dy = obs[0]
         
+        # return 1 if lower than 18
+        action = int(x1 < 18)
+        return [action], None
+
         # time to reach x1 + dx (next platform)
         t_travel = (x1 + dx) / self.speed
 

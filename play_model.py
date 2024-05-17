@@ -10,7 +10,7 @@ class PlayModel():
     def __init__(self, model_path: str, Env, difficulty=(5,0)):
         Config.caption += f" - Model: [{model_path[7:-4]}]"
         Config.FPS = 100
-        self.env: EndlessRunnerEnv = Env(difficulty=difficulty, render=True, truncated=False)
+        self.env: EndlessRunnerEnv = Env(difficulty=difficulty, render=True, truncated=True)
         # self.env: EndlessRunnerEnv = Env(render=True, truncated=False)
         self.model: PPO = PPO.load(model_path, env=self.env)
 
@@ -69,7 +69,6 @@ class PlayModel():
                 self.controller.handle_events()
                 action, _ = model.predict(obs, deterministic=True)
                 obs, reward, term, trunc, _ = env.step(action)
-                ic(obs)
                 total_reward += reward
                 done = term or trunc
             rewards[episode] = total_reward
@@ -105,7 +104,7 @@ if __name__ == "__main__":
     path = "models/05_05/PPO_22_17/_44100000_steps.zip"
     path = "models/05_08/PPO_12_50.zip"
     path = "models/05_12/PPO_14_26/_10000000_steps.zip"  # PERCFECT
-    path = "models/05_13/PPO_21_25/_100000_steps.zip"
+    # path = "models/05_13/PPO_21_25/_100000_steps.zip"
     print(f"Playing [{path}] in [{Env.__name__}]")
 
     play_model = PlayModel(path, Env, (6, 0))

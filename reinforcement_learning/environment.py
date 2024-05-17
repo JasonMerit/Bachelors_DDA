@@ -14,8 +14,8 @@ class EndlessRunnerEnv(gym.Env):
     agent to interact with the game. Display enherits from EndlessRunner, so it
     can be used to run the game with rendering."""
 
-    # action_space = spaces.Discrete(2)  # Binary (Update step too)
-    action_space = spaces.Discrete(4)  # Multiple
+    action_space = spaces.Discrete(2)  # Binary (Update step too)
+    # action_space = spaces.Discrete(4)  # Multiple
     
     # x1, dx, dy
     # Update _step too
@@ -36,6 +36,7 @@ class EndlessRunnerEnv(gym.Env):
     # observation_space = spaces.Box(low=range[0], high=range[1], shape=(3,), dtype=np.float16)
     # observation_space = spaces.Box(low=0, high=1000, shape=(3,), dtype=np.float16)
     max_steps = 2_500
+    max_platforms = 100
 
     def __init__(self, difficulty=None, render=False, truncated=True):
         """
@@ -45,8 +46,12 @@ class EndlessRunnerEnv(gym.Env):
         self.difficulty = difficulty  # If not None, difficulty won't change
         if difficulty:
             self.game.set_difficulty(difficulty)
-        self._truncate = lambda: self.step_count >= self.max_steps if truncated else False
+        self._truncate = lambda: self.current_cleard_platforms >= self.max_platforms if truncated else False
+        # self._truncate = lambda: self.step_count >= self.max_steps if truncated else False
         self._render = render
+        
+        self.player = self.game.player
+        self.current_cleard_platforms = 0
         
 
     def step(self, action):
@@ -57,8 +62,8 @@ class EndlessRunnerEnv(gym.Env):
         self.step_count += 1
         # cleared_platforms = self.game.player.cleared_platforms
         if action > 0:
-            # self.game.take_action(2)              # Binary
-            self.game.take_action(action - 1)     # Multiple
+            self.game.take_action(2)              # Binary
+            # self.game.take_action(action - 1)     # Multiple
         
         terminated = self.game.tick()
         self.render()
@@ -68,7 +73,12 @@ class EndlessRunnerEnv(gym.Env):
             terminated = self.game.tick()
             self.render()
 
-        reward = -10 if terminated else 1  # Tue
+        # REWARD
+        # reward = -10 if terminated else 1  # Tue
+        # reward = 1 - int(terminated)
+        reward = int(self.game.player.cleared_platforms > self.current_cleard_platforms)
+        self.current_cleard_platforms = self.game.player.cleared_platforms
+        
         return self._state(), reward, terminated, self._truncate(), {}
     
     def reset(self, seed=None, difficulty=None):
@@ -84,6 +94,7 @@ class EndlessRunnerEnv(gym.Env):
         self.game.reset()
         # self.game.reset(seed)
         self.step_count = 0
+        self.current_cleard_platforms = 0
         return self._state(), {}
     
     def render(self, state=None):
