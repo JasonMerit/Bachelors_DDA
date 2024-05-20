@@ -189,9 +189,46 @@ def main():
     plt.ioff()
     plt.show()
 
+def wiggle_demo():
+    # plt.ion()  # Enable interactive mode
 
-# _line = np.column_stack((np.full_like(continuous, constant), continuous))
-# subplot_line(_line)
+    # from matplotlib.widgets import Slider
+    # slider = Slider(ax_slider, 'Phase', 0, 2*np.pi, valinit=0)
+    fig, ax = plt.subplots()
+    # Create initial data
+    line = np.column_stack((continuous, np.full_like(continuous, 3)))
+
+    def _clear():
+        ax.clear()
+        ax.set_xlim(1, 10)
+        ax.set_ylim(1, 10)
+        ax.set_xlabel("P(death)")
+        ax.set_ylabel("\u0394gap")
+        ax.xaxis.set_ticks_position('bottom')
+        ax.set_xticks(range(1, 11))
+        ax.set_yticks(range(1, 11))
+
+    def _plot(line):
+        ax.plot(line[:, 1], line[:, 0], color='r')
+        ax.scatter(line[0, 1], line[0, 0], color='r')
+        ax.scatter(line[-1, 1], line[-1, 0], color='r')
+    
+    _clear()
+    _plot(line)
+
+    def on_key(event):
+        if event.key == 'q':
+            quit()
+    fig.canvas.mpl_connect('key_press_event', on_key)
+
+
+    for i in range(1000):
+        _clear()
+        line = wiggle(line, scale=0.01)
+        _plot(line)
+        plt.pause(0.01)
+    
 
 if __name__ == "__main__":
-    main()
+    # main()
+    wiggle_demo()
