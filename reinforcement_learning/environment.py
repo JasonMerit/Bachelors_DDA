@@ -136,8 +136,8 @@ class EndlessRunnerEnv(gym.Env):
         #     if len(self.game.obstacles) > 0 else 0
         
         return np.array([x1]).astype(np.float16)  # Scalar
-        return np.array([x1, dist_obstacle]).astype(np.float16)  # Scalar + obstacle
         return np.array([x1, dx, dy]).astype(np.float16)
+        return np.array([x1, dist_obstacle]).astype(np.float16)  # Scalar + obstacle
     
     # def get_random_state(self):
     #     return self.game.get_random_state()

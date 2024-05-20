@@ -1,5 +1,5 @@
 import os
-checkpoint_folder = "models/05_13/PPO_21_29"
+checkpoint_folder = "models/05_12/PPO_14_26"
 players = ["500000", "7000000", "5800000"]
 model = 100000
 

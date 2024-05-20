@@ -13,7 +13,6 @@ class PlayModel():
         self.env: EndlessRunnerEnv = Env(difficulty=difficulty, render=True, truncated=True)
         # self.env: EndlessRunnerEnv = Env(render=True, truncated=False)
         self.model: PPO = PPO.load(model_path, env=self.env)
-
         self.key_actions = {
             "quit": self.quit,
             "pause": self.pause, 
@@ -104,7 +103,7 @@ if __name__ == "__main__":
     path = "models/05_05/PPO_22_17/_44100000_steps.zip"
     path = "models/05_08/PPO_12_50.zip"
     path = "models/05_12/PPO_14_26/_10000000_steps.zip"  # PERCFECT
-    # path = "models/05_13/PPO_21_25/_100000_steps.zip"
+    # path = "models/04_18/PPO_00_05/_7000000_steps.zip"
     print(f"Playing [{path}] in [{Env.__name__}]")
 
     play_model = PlayModel(path, Env, (6, 0))

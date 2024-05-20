@@ -118,17 +118,11 @@ def print_missing(xx):
             print(f"Missing {last+1} to {val-1}")
         last = val
 
-def create_difficulty_matrix(model_path: str):
-    # Iterate over permutations of difficulty
-    # _10000000_steps_diff_mat.csv
-    # if f"{model_path[23:-4]}_diff_mat.csv" in os.listdir(checkpoint_folder):
-    #     print(f"Skipping {model_path[23:-4]}")
-    #     return
+def create_difficulty_matrix(player: str, tag=""):
     for i in range(1, 11):
         for j in range(1, 11):
-            mean, std = evaluate_model(model_path, EndlessRunnerEnv, difficulty=(i, j), n_episodes=20)
-            with open(f"{model_path[:-4]}_diff_mat.csv", "a") as f:
-                # f.write(f"{i}, {j}, {scores}\n")
+            mean, std = evaluate_model(player, EndlessRunnerEnv, difficulty=(i, j), n_episodes=50)
+            with open(f"{player}_diff_mat{tag}.csv", "a") as f:
                 f.write(f"{i}, {j}, {mean:.2f}, {std:.2f}\n")
 
 def plot_difficulty_matrix(data_path: str, title=None):
@@ -201,16 +195,17 @@ def subplot_all(players, rows, cols):
         ax.set_title(f"{players[i][24:-6]}")    
     plt.show()
     
-def create_ndarray(data_path: str, result_path: str, std=False):
+def create_ndarray(player:str, std=False):
     col = 3 if std else 2
-    with open(data_path, "r") as f:
+
+    with open(f"{player}_diff_mat.csv", "r") as f:
         reader = csv.reader(f)
         matrix = np.zeros((10, 10))
         for row in reader:
             matrix[int(row[0]) - 1, int(row[1]) - 1] = float(row[col])
     
     # save the matrix as np matrix
-    np.save(result_path, matrix)
+    np.save(f"{player}_means.npy", matrix)
 
 def eval_training_session():
     means = np.zeros((len(all_players), 10))
@@ -225,6 +220,11 @@ def eval_training_session():
     np.save(f"{checkpoint_folder}_train_session", means)
     np.save(f"{checkpoint_folder}_train_session_std", stds)
 
+def wipe_data(folder):
+    # Wipe anything in checkpoint_folder not ending with .zip
+    for f in os.listdir(folder):
+        if not f.endswith(".zip"):
+            os.remove(f"{checkpoint_folder}/{f}")
 
 if __name__ == "__main__":
     from model_config import checkpoint_folder, players, model, all_players
@@ -237,9 +237,9 @@ if __name__ == "__main__":
     # Preparing difficulty matrix
     # eval_all_models(checkpoint_folder)
     # set players to all models in folder
-    # for player in tqdm(all_players):
-    #     create_difficulty_matrix(f"{player}.zip")
-    #     create_ndarray(f"{player}_diff_mat.csv", f"{player}_means.npy")
+    for player in tqdm(all_players):
+        create_difficulty_matrix(player)
+        create_ndarray(player)
         # create_ndarray(f"{player}_diff_mat.csv", f"{player}_std.npy", True)
     
     
@@ -262,8 +262,7 @@ if __name__ == "__main__":
     # for player in tqdm(players):
     #     create_difficulty_matrix(f"models/04_14/PPO_07_08/{player}.zip")
         # plot_difficulty_matrix(f"models/04_14/PPO_07_08/{player}_diff_mat.csv")
-
-    eval_training_session()
+    # eval_training_session()
 # 1209 407
 # 1222 266
 # 1235 199
