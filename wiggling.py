@@ -6,7 +6,7 @@ from scipy.optimize import minimize
 from scipy.interpolate import interpn, interp1d
 
 from model_config import checkpoint_folder, all_players, players
-all_players = all_players[60:70]  # TODO: remove this line
+# all_players = all_players[60:70]  # TODO: remove this line
 
 discrete = np.arange(1, 11)
 continuous = np.linspace(1, 10, 100)
@@ -53,11 +53,11 @@ def eval_line(datas, line, targets):
     performances = [interpn((discrete, discrete), d, line, "cubic") for d in datas]
     spreads = get_spreads(targets, performances)  # (t, std) pairs
     if len(spreads) == 0:
-        return 0, performances
+        return 0, 0, performances
     best_target, max_std = max(spreads, key=lambda x: x[1])
-    return max_std, performances
+    return max_std, best_target, performances
 
-def wiggle(line, scale=0.1):
+def wiggle(line, scale):
     start_point = line[0] + np.random.normal(0, scale, 2)
     start_point = np.clip(start_point, 1, 10)
 
@@ -141,12 +141,13 @@ def axis_setup(ax1, ax2):
     ax2.set_ylabel('Performance')
     ax2.set_title('Performance vs. Difficulty')
 
-def plot_update(line, std, performances, fig, ax1, ax2):
+def plot_update(line, std, Z, target, performances, fig, ax1, ax2):
     """Called to update the plot with new data."""
     # Clear and setup axes
     axis_setup(ax1, ax2)
 
     # Axis 1 line plot
+    ax1.matshow(Z, extent=(1, 10, 1, 10), origin='lower')
     ax1.plot(line[:, 1], line[:, 0], color='r')
     ax1.text(line[0, 1], line[0, 0], f"({line[0, 1]:.2f}, {line[0, 0]:.2f})", fontsize=8)
     ax1.text(line[-1, 1], line[-1, 0], f"({line[-1, 1]:.2f}, {line[-1, 0]:.2f})", fontsize=8)
@@ -157,38 +158,65 @@ def plot_update(line, std, performances, fig, ax1, ax2):
     # Axis 2 performance plot
     for p in performances:
         ax2.plot(continuous, p, color="r", alpha=0.1)
-    
+    ax2.axhline(target, color='b', linestyle='--', label=f"target: {target:.2f}")
+
     # Draw and flush
     fig.canvas.draw()
     fig.canvas.flush_events()
+
+    plt.pause(0.01)
     
 def main():
-    datas = [np.load(f"{p}_means.npy") for p in all_players]
-    line = np.column_stack((continuous, np.full_like(continuous, 3)))
-    targets = np.arange(10, 100, 5)
+    datas = [np.load(f"{p}_means.npy") for p in all_players][3:]  # Remove worst 2 players
+    Zs = np.array([interpolate(d) for d in datas])
+    Z = Zs.mean(axis=0)
+    # line = np.column_stack((np.full_like(continuous, 3), continuous)) 
+    line = np.column_stack((continuous, continuous))  # Slope 1 line
+    # line = np.load("line.npy")
+    line_history = np.array(np.hstack([line[0], line[-1]]))
+    targets = np.arange(10, 45, 5)  # target performances
 
     plt.ion()  # Enable interactive mode
 
     # Initial data
-    std, performances = eval_line(datas, line, targets)
+    std, target, performances = eval_line(datas, line, targets)
 
     # Plot initial data
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-    plot_update(line, std, performances, fig, ax1, ax2)
+    plot_update(line, std, Z, target, performances, fig, ax1, ax2)
+
+    def on_key(event):
+        if event.key == 'q':
+            quit()
+    fig.canvas.mpl_connect('key_press_event', on_key)
     
-    for i in range(2):
-        _line = wiggle(line)
-        _std, performances = eval_line(datas, _line, targets)
+    scale0 = 0.1
+    scale = scale0
+    fails = 0
+    while True:
+        _line = wiggle(line, scale)
+        _std, target, performances = eval_line(datas, _line, targets)
 
         if _std > std:
             line = _line
             std = _std
-            plot_update(_line, _std, performances, fig, ax1, ax2)
-    
-    np.save("line.npy", line)
-    plt.ioff()
-    plt.show()
+            np.save("line.npy", line)
+            line_history = np.vstack((line_history, np.hstack([line[0], line[-1]])))
+            np.save("line_history.npy", line_history)
+            plot_update(_line, _std, Z, target, performances, fig, ax1, ax2)
 
+            fails = 0
+            scale = scale0
+        else:
+            fails += 1
+            if fails > 5:
+                scale += scale0
+                if scale > 1:
+                    scale = scale0
+                    print("Resetting scale")
+                    continue
+    
+    
 def wiggle_demo():
     # plt.ion()  # Enable interactive mode
 
@@ -216,19 +244,53 @@ def wiggle_demo():
     _clear()
     _plot(line)
 
-    def on_key(event):
-        if event.key == 'q':
-            quit()
-    fig.canvas.mpl_connect('key_press_event', on_key)
-
-
     for i in range(1000):
         _clear()
-        line = wiggle(line, scale=0.01)
+        line = wiggle(line, scale=0.1)
         _plot(line)
         plt.pause(0.01)
+
+def play_history():
+    # plt.ion()  # Enable interactive mode
+    datas = [np.load(f"{p}_means.npy") for p in all_players][3:]  # Remove worst 2 players
+    lines = np.load("line_history.npy") # starty, startx, endy, endx
+
+    fig, ax = plt.subplots()
+    ax.set_xlim(1, 10)
+    ax.set_ylim(1, 10)
+    ax.set_xlabel("P(death)")
+    ax.set_ylabel("\u0394gap")
+    ax.xaxis.set_ticks_position('bottom')
+    ax.set_xticks(range(1, 11))
+    Zs = np.array([interpolate(d) for d in datas])
+    Z = Zs.mean(axis=0)
+    # matshow the Z matrix
+    ax.matshow(Z, extent=(1, 10, 1, 10), origin='lower')
+    curve, = ax.plot([lines[0, 1], lines[0, 3]], [lines[0, 0], lines[0, 2]], color='r')
+    start, = ax.plot(lines[0, 1], lines[0, 0], 'ro')
+    end, = ax.plot(lines[0, 3], lines[0, 2], 'ro')
+    print(lines.shape)
+    for i, (a_y, a_x, b_y, b_x) in enumerate(lines):
+        # set yvalues
+        curve.set_ydata([a_y, b_y])
+        curve.set_xdata([a_x, b_x])
+        start.set_ydata([a_y])
+        start.set_xdata([a_x])
+        end.set_ydata([b_y])
+        end.set_xdata([b_x])
+        # plot line
+
+        # ax.clear()
+        # ax.plot([a_x, b_x], [a_y, b_y], color='r')
+        # ax.scatter(a_x, a_y, color='r')
+        # ax.scatter(b_x, b_y, color='r')
+        ax.set_title(f"Step {i+1}/{len(lines)}")
+        plt.pause(0.1)
+    print(np.round(lines[-1], 2))
+    
     
 
 if __name__ == "__main__":
     # main()
-    wiggle_demo()
+    # wiggle_demo()
+    play_history()
