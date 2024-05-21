@@ -18,18 +18,30 @@ def interpolate(data, res=100):
     coords = np.array(np.meshgrid(smooth, smooth)).T.reshape(-1, 2)
     return interpn((discrete, discrete), data, coords, "cubic").reshape(res, -1)
     
-def get_x(Y, target) -> np.ndarray:
-    """Returns distinct x values that intersect with target."""
-    f = interp1d(continuous, Y, kind='cubic')
-    objective = lambda x: (f(x) - target)**2
+# def _get_x(Y, target) -> np.ndarray:
+#     """Returns distinct x values that intersect with target."""
+#     f = interp1d(continuous, Y, kind='cubic')
+#     objective = lambda x: (f(x) - target)**2
     
-    solutions = set()
-    for x0 in range(1, 11):
-        x = minimize(objective, x0, bounds=[(1, 10)]).x[0]
-        if np.isclose(f(x), target):
-            solutions.add(np.round(float(x), 2))
+#     solutions = set()
+#     for x0 in range(1, 11):
+#         x = minimize(objective, x0, bounds=[(1, 10)]).x[0]
+#         if np.isclose(f(x), target):
+#             solutions.add(np.round(float(x), 2))
 
-    return np.array(sorted(list(solutions)))
+#     return np.array(sorted(list(solutions)))
+
+def get_x(Y, target):
+    crossings = np.where(np.diff(np.sign(Y - target)))[0]
+
+    # Interpolate 
+    x_intersections = []
+    for c in crossings:
+        x0, x1 = continuous[c : c + 2]
+        y0, y1 = Y[c : c + 2]
+        x_intersections.append(x0 + (target - y0) * (x1 - x0) / (y1 - y0))
+
+    return np.array(x_intersections)
 
 def get_intersection_spread(Ys, target) -> float:
     """Returns spread of x values intersecting with target.
@@ -200,9 +212,9 @@ def main():
         if _std > std:
             line = _line
             std = _std
-            np.save("line.npy", line)
+            # np.save("line.npy", line)
             line_history = np.vstack((line_history, np.hstack([line[0], line[-1]])))
-            np.save("line_history.npy", line_history)
+            # np.save("line_history.npy", line_history)
             plot_update(_line, _std, Z, target, performances, fig, ax1, ax2)
 
             fails = 0
@@ -213,7 +225,6 @@ def main():
                 scale += scale0
                 if scale > 1:
                     scale = scale0
-                    print("Resetting scale")
                     continue
     
     
@@ -260,12 +271,12 @@ def play_history():
     ax.set_ylim(1, 10)
     ax.set_xlabel("P(death)")
     ax.set_ylabel("\u0394gap")
-    ax.xaxis.set_ticks_position('bottom')
     ax.set_xticks(range(1, 11))
     Zs = np.array([interpolate(d) for d in datas])
     Z = Zs.mean(axis=0)
     # matshow the Z matrix
     ax.matshow(Z, extent=(1, 10, 1, 10), origin='lower')
+    ax.xaxis.set_ticks_position('bottom')
     curve, = ax.plot([lines[0, 1], lines[0, 3]], [lines[0, 0], lines[0, 2]], color='r')
     start, = ax.plot(lines[0, 1], lines[0, 0], 'ro')
     end, = ax.plot(lines[0, 3], lines[0, 2], 'ro')
@@ -288,9 +299,26 @@ def play_history():
         plt.pause(0.1)
     print(np.round(lines[-1], 2))
     
-    
+
+def test():
+    line = np.column_stack((continuous, continuous))
+    datas = [np.load(f"{p}_means.npy") for p in all_players][3:]  # Remove worst 2 players
+    targets = np.arange(10, 45, 5)  # target performances
+    eval_line(datas, line, targets)
 
 if __name__ == "__main__":
-    # main()
+    main()
     # wiggle_demo()
-    play_history()
+    # play_history()
+    
+    # from line_profiler import LineProfiler
+    # profiler = LineProfiler()
+
+    # # Add the function to the profiler
+    # profiler.add_function(get_x)
+
+    # # Run the wrapper function
+    # profiler.run('test()')
+
+    # # Print the profiling results
+    # profiler.print_stats()
