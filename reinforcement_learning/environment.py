@@ -8,24 +8,24 @@ from gymnasium import spaces
 
 from game.display import Display
 from game.endless_runner import EndlessRunner
-
+from icecream import ic
 class EndlessRunnerEnv(gym.Env):
     """The purpose of the environment is to provide a standard interface for the 
     agent to interact with the game. Display enherits from EndlessRunner, so it
     can be used to run the game with rendering."""
 
-    action_space = spaces.Discrete(2)  # Binary (Update step too)
-    # action_space = spaces.Discrete(4)  # Multiple
+    # action_space = spaces.Discrete(2)  # Binary (Update step too)
+    action_space = spaces.Discrete(4)  # Multiple
     
     # x1, dx, dy
     # Update _step too
-    # observation_space = spaces.Box(low=np.array([0.0, 45.0, -400], dtype=np.float16), 
-    #                                high=np.array([325.0, 210.0, 210.0], dtype=np.float16), 
-    #                                shape=(3,), dtype=np.float16)
+    observation_space = spaces.Box(low=np.array([0.0, 45.0, -400], dtype=np.float16), 
+                                   high=np.array([325.0, 210.0, 210.0], dtype=np.float16), 
+                                   shape=(3,), dtype=np.float16)
     # x1
-    observation_space = spaces.Box(low=np.array([0.0], dtype=np.float16), 
-                                   high=np.array([325.0], dtype=np.float16), 
-                                   shape=(1,), dtype=np.float16)
+    # observation_space = spaces.Box(low=np.array([0.0], dtype=np.float16), 
+    #                                high=np.array([325.0], dtype=np.float16), 
+    #                                shape=(1,), dtype=np.float16)
     # x1, dist_obstacle
     # observation_space = spaces.Box(low=np.array([0.0, 0.0], dtype=np.float16), 
     #                             high=np.array([325.0, 300.0], dtype=np.float16), 
@@ -62,8 +62,8 @@ class EndlessRunnerEnv(gym.Env):
         self.step_count += 1
         # cleared_platforms = self.game.player.cleared_platforms
         if action > 0:
-            self.game.take_action(2)              # Binary
-            # self.game.take_action(action - 1)     # Multiple
+            # self.game.take_action(2)              # Binary
+            self.game.take_action(action - 1)     # Multiple
         
         terminated = self.game.tick()
         self.render()
@@ -103,7 +103,7 @@ class EndlessRunnerEnv(gym.Env):
     
     def close(self):
         self.game.close()
-    
+    kek = 0
     def _state(self):
         """Return the state consisting of the tuple
         - player on floor (0, 1)
@@ -113,19 +113,28 @@ class EndlessRunnerEnv(gym.Env):
         # First platform with platform_left > player_right
         index = 0
         plat1 = self.game.platforms[index]
-        while plat1.right < self.game.player.left:
-            index += 1
-            plat1 = self.game.platforms[index]
-            assert index < len(self.game.platforms), "Player is not on a platform"
         plat2 = self.game.platforms[index + 1]
-        
+        pl, pr = self.game.player.left, self.game.player.right
+        while plat1.right < pl or plat2.left < pr:
+            # if plat2.left > pr:
+            #     break
+            index += 1
+            plat1 = plat2
+            plat2 = self.game.platforms[index + 1]
+            if self.game.platforms[index + 2].left < pr:
+                break
 
-        topright = plat1.topright
         topleft = plat2.topleft
-        x1 = topright[0] - self.game.player.left
+        topright = plat1.topright
+        x1 = topright[0] - pl
+        ic(x1)
+        if x1 == 9:
+            self.kek += 1
+            if self.kek == 6:
+                ic("HERE", self.kek)
         dx = topleft[0] - topright[0]
         dy = topleft[1] - topright[1]
-        
+
         # Search for next obstacle
         dist_obstacle = 0
         for obstacle in self.game.obstacles:
@@ -135,8 +144,8 @@ class EndlessRunnerEnv(gym.Env):
         # dist_obstacle = self.game.obstacles[0].left - self.game.player.left \
         #     if len(self.game.obstacles) > 0 else 0
         
-        return np.array([x1]).astype(np.float16)  # Scalar
         return np.array([x1, dx, dy]).astype(np.float16)
+        return np.array([x1]).astype(np.float16)  # Scalar
         return np.array([x1, dist_obstacle]).astype(np.float16)  # Scalar + obstacle
     
     # def get_random_state(self):

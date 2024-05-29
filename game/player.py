@@ -1,6 +1,6 @@
 from typing import List
 from math import sqrt, sin, cos, radians
-
+from icecream import ic
 from game.util import *
 from game.config import Config
 from game.entities import Platform, Slope, Obstacle
@@ -178,6 +178,7 @@ class Player():
 
         # Score tick
         if platform and self.current_platform != platform:
+            ic("__________")
             self.cleared_platforms += 1
         self.current_platform = platform
     

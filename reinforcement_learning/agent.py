@@ -1,4 +1,5 @@
 from math import sqrt
+from icecream import ic
 
 class CheaterAgent():
     
@@ -24,12 +25,14 @@ class CheaterAgent():
 
     def predict(self, obs, state=None, episode_start=None, deterministic=True):
         # return [0], None
-        x1 = obs[0][0]
-        # x1, dx, dy = obs[0]
         
+        # x1 = obs[0][0]
+        # action = int(x1 < 17) * 2
+        # return [action], None
+        x1, dx, dy = obs[0]
+        
+        # ic(x1)
         # return 1 if lower than 18
-        action = int(x1 < 18)
-        return [action], None
 
         # time to reach x1 + dx (next platform)
         t_travel = (x1 + dx) / self.speed
@@ -40,7 +43,13 @@ class CheaterAgent():
         # if t > t_travel:
         #     return [3], None
         # return [0], None
+        if dy < 0: # Wait until end of platform and fall
+            t_wait = x1 / self.speed
+            t_fall = sqrt(-2 * dy / self.gravity)
 
+            if t_fall + t_wait > t_travel:
+                return [0], None
+            
         for i, hold_time in enumerate(self.jump_times[::-1]):
             hold_time += 1
             d = self.jump_speed**2 + 2 * self.gravity * (self.jump_speed * hold_time - dy)

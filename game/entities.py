@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+from icecream import ic
 class Platform(ABC):
     """x and top define position, representing the top left corner of the platform.
     """
@@ -36,7 +36,7 @@ class Platform(ABC):
         pass
     
     def outline(self, invert=False):
-        pass # for debugging
+        raise NotImplementedError
 
     def __repr__(self):
         return f"Platform: {self.id}, {self.topleft}, {self.width}"

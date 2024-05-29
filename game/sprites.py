@@ -7,6 +7,7 @@ from pygame.color import Color
 
 from game.endless_runner import Platform, Flat, Slope, Player, Obstacle
 from game.config import Config
+from icecream import ic
 
 def blit_rotate(surf, image, topleft, angle):
     rotated_image = pg.transform.rotate(image, angle)
@@ -40,13 +41,7 @@ class RectSprite(Sprite):
     def update(self, screen : Surface, debug: bool):
         screen.blit(self.surface, (self.x, self.draw_top))
     
-    def outline(self, invert=False):
-        if invert:
-            self.surface = self.outline_surface
-        else:
-            temp = self.surface
-            self.surface = self.outline_surface
-            self.outline_surface = temp
+
 
 class FlatSprite(Flat, RectSprite):
     def __init__(self, topleft, width, color):
@@ -68,6 +63,14 @@ class FlatSprite(Flat, RectSprite):
         self.draw_top = Config.height - self.top
 
         RectSprite.__init__(self)
+    
+    def outline(self, invert=False):
+        if invert:
+            self.surface = self.outline_surface
+        else:
+            temp = self.surface
+            self.surface = self.outline_surface
+            self.outline_surface = temp
 
 from math import tan, radians, cos, sin
 class SlopeSprite(Slope, RectSprite):

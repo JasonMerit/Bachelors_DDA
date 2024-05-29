@@ -3,8 +3,8 @@ from reinforcement_learning.environment import EndlessRunnerEnv
 from reinforcement_learning.agent import CheaterAgent
 
 class PlayAgent():
-    def __init__(self):
-        self.env = EndlessRunnerEnv((4, 0), render=True, truncated=True)
+    def __init__(self, d):
+        self.env = EndlessRunnerEnv((d, 0), render=True, truncated=False)
 
         self.key_actions = {
             "quit": self.quit,
@@ -21,6 +21,8 @@ class PlayAgent():
         
         self.playing = True 
         self.paused = False
+        
+        
     
     def quit(self):
         self.playing = False
@@ -66,10 +68,14 @@ class PlayAgent():
             if self.env.game.player.cleared_platforms > 1000:
                 print("You win!")
                 break
+            if self.env.game.player.cleared_platforms == STOP:
+                self.env._render = True
 
-
+STOP = 119
 if __name__ == "__main__":
-    play_agent = PlayAgent()
+    play_agent = PlayAgent(10)
+    if STOP:
+        play_agent.toggle_render()
     play_agent.play()
 
 # 4
