@@ -35,3 +35,6 @@ class Controller:
         k = 10 ** int(floor(log10(abs(Config.FPS - 1))))
         Config.FPS -= k
         Config.FPS = max(4, Config.FPS)
+    
+    
+    

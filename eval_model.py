@@ -1,6 +1,7 @@
 import numpy as np
 from time import time
 from tqdm import tqdm
+from icecream import ic
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
@@ -31,12 +32,12 @@ def evaluate_model(model_path: str, Env, difficulty=None, n_episodes: int = 50):
         assert n_episodes % 10 == 0, "n_episodes must be divisible by 10 to stratify across difficulty."
         n_episodes = n_episodes // 10
         for d in range(10):
-            env = make_vec_env(Env, n_episodes, env_kwargs={"difficulty": (d+1, 0)})
+            env = make_vec_env(Env, n_episodes, env_kwargs={"difficulty": (d+1, 0), "eval": True})
             mean, std = evaluate_policy(PPO.load(model_path), env, n_eval_episodes=n_episodes)
             means[d], stds[d] = mean, std
         return np.mean(means), np.mean(stds)
     
-    env = make_vec_env(Env, n_episodes, env_kwargs={"difficulty": difficulty})
+    env = make_vec_env(Env, n_episodes, env_kwargs={"difficulty": difficulty, "eval":True})
     mean, std = evaluate_policy(PPO.load(model_path), env, n_eval_episodes=n_episodes)
     return mean, std
 
@@ -119,6 +120,10 @@ def print_missing(xx):
         last = val
 
 def create_difficulty_matrix(player: str, tag=""):
+    # Skip if already exists
+    if os.path.exists(f"{player}_diff_mat{tag}.csv"):
+        ic(f"{player} already exists")
+        return
     for i in range(1, 11):
         for j in range(1, 11):
             mean, std = evaluate_model(player, EndlessRunnerEnv, difficulty=(i, j), n_episodes=50)
@@ -213,7 +218,7 @@ def eval_training_session():
     n_episodes = 20
     for i, model_path in enumerate(tqdm(all_players)):
         for j in range(1, 11):
-            env = make_vec_env(EndlessRunnerEnv, n_episodes, env_kwargs={"difficulty": (j, 0)})
+            env = make_vec_env(EndlessRunnerEnv, n_episodes, env_kwargs={"difficulty": (j, 0), "eval": True})
             mean, std = evaluate_policy(PPO.load(model_path), env, n_eval_episodes=n_episodes)
             means[i, j-1] = mean
             stds[i, j-1] = std
@@ -230,6 +235,7 @@ if __name__ == "__main__":
     from model_config import checkpoint_folder, players, model, all_players
     ## Selecting players
     # evaluate_training_session(checkpoint_folder, EndlessRunnerEnv)
+    # eval_training_session()  # Across difficulty
     # plot_scores(f"{checkpoint_folder}_train_evals.csv")
     # data = prepare_data(f"{checkpoint_folder}_train_evals.csv")
     # print_contenders(data)
@@ -241,7 +247,21 @@ if __name__ == "__main__":
         create_difficulty_matrix(player)
         create_ndarray(player)
         # create_ndarray(f"{player}_diff_mat.csv", f"{player}_std.npy", True)
-    
+    # all_folders = ["models/06_04/PPO_19_55",
+    #             "models/06_04/PPO_23_03",
+    #             "models/06_05/PPO_02_17",
+    #             "models/06_05/PPO_05_31",
+    #             "models/06_05/PPO_08_59",
+    #             "models/06_05/PPO_12_25",
+    #             "models/06_05/PPO_15_54"]
+    # for folder in all_folders:
+    #     print(f"Folder {folder}")
+    #     all_players = [folder + "/" + f[:-4] for f in os.listdir(folder) if f.endswith(".zip")]
+    #     all_players.sort(key=lambda x: int(x.split("_")[-2]))
+    #     for player in tqdm(all_players[:60]):
+    #         create_difficulty_matrix(player)
+    #         create_ndarray(player)
+
     
     # subplot_difficulty_matrix(players)
     # player = "models/05_05/PPO_22_17/_44800000_steps"

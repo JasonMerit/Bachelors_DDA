@@ -45,30 +45,7 @@ class Display(EndlessRunner):
         self.highscore = 0
         self.history = deque(maxlen=100)
     
-    @staticmethod
-    def play_recordings(histories, fps=60):
-        pg.init()
-        screen = pg.display.set_mode((Config.width, Config.height))
-        clock = pg.time.Clock()
-        for history in histories:
-            for h in history:
-                pg.surfarray.blit_array(screen, h)
-                pg.display.flip()
-                clock.tick(fps)
-        
-        pg.quit()
-    
-    @staticmethod
-    def play_random_states(random_states, fps=60):
-        pg.init()
-        game = Display()
-        clock = pg.time.Clock()
-        for state in random_states:
-            game.game_master.set_state(state)
-            clock.tick(fps)
-        
-        pg.quit()
-    
+   
     def reset(self):
         self.sprites.empty()
         # self.sprites.add(self.player)
@@ -78,6 +55,10 @@ class Display(EndlessRunner):
     
     def close(self):
         pg.quit()
+    
+    def screen_shot(self):
+        pg.image.save(self.screen, "screenshot.png")
+        print("Screen shot taken")
     
     def render(self, state=None, step_count=0, debug=True):
         self.screen.fill(Config.BLACK)
@@ -103,7 +84,7 @@ class Display(EndlessRunner):
         
         # Draw player trajectory
         # self.player.draw_curve(self.screen, self.platforms[:2])
-        if debug is True:
+        if debug is False:
 
             # Draw state
             # if state is not None:

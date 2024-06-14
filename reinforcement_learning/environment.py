@@ -38,7 +38,7 @@ class EndlessRunnerEnv(gym.Env):
     max_steps = 2_500
     max_platforms = 100
 
-    def __init__(self, difficulty=None, render=False, truncated=True):
+    def __init__(self, difficulty=None, render=False, truncated=True, eval=False):
         """
         If difficulty is given, the game difficulty won't change.
         """
@@ -47,12 +47,17 @@ class EndlessRunnerEnv(gym.Env):
         if difficulty:
             self.game.set_difficulty(difficulty)
         self._truncate = lambda: self.current_cleard_platforms >= self.max_platforms if truncated else False
-        # self._truncate = lambda: self.step_count >= self.max_steps if truncated else False
+        self._reward = self._reward_eval if eval else self._reward_train
         self._render = render
         
         self.player = self.game.player
         self.current_cleard_platforms = 0
-        
+    
+    def _reward_train(self, terminated):
+        return -10 if terminated else 1
+
+    def _reward_eval(self, terminated):
+        return int(self.game.player.cleared_platforms > self.current_cleard_platforms)
 
     def step(self, action):
         """Actions:
@@ -74,9 +79,9 @@ class EndlessRunnerEnv(gym.Env):
             self.render()
 
         # REWARD
+        reward = self._reward(terminated)
         # reward = -10 if terminated else 1  # Tue
-        # reward = 1 - int(terminated)
-        reward = int(self.game.player.cleared_platforms > self.current_cleard_platforms)
+        # reward = int(self.game.player.cleared_platforms > self.current_cleard_platforms)
         self.current_cleard_platforms = self.game.player.cleared_platforms
         
         return self._state(), reward, terminated, self._truncate(), {}
@@ -116,8 +121,6 @@ class EndlessRunnerEnv(gym.Env):
         plat2 = self.game.platforms[index + 1]
         pl, pr = self.game.player.left, self.game.player.right
         while plat1.right < pl or plat2.left < pr:
-            # if plat2.left > pr:
-            #     break
             index += 1
             plat1 = plat2
             plat2 = self.game.platforms[index + 1]
@@ -127,34 +130,13 @@ class EndlessRunnerEnv(gym.Env):
         topleft = plat2.topleft
         topright = plat1.topright
         x1 = topright[0] - pl
-        ic(x1)
-        if x1 == 9:
-            self.kek += 1
-            if self.kek == 6:
-                ic("HERE", self.kek)
         dx = topleft[0] - topright[0]
         dy = topleft[1] - topright[1]
 
-        # Search for next obstacle
-        dist_obstacle = 0
-        for obstacle in self.game.obstacles:
-            if obstacle.left > self.game.player.left:
-                dist_obstacle = obstacle.left - self.game.player.left
-                break
-        # dist_obstacle = self.game.obstacles[0].left - self.game.player.left \
-        #     if len(self.game.obstacles) > 0 else 0
-        
         return np.array([x1, dx, dy]).astype(np.float16)
         return np.array([x1]).astype(np.float16)  # Scalar
         return np.array([x1, dist_obstacle]).astype(np.float16)  # Scalar + obstacle
     
-    # def get_random_state(self):
-    #     return self.game.get_random_state()
-    
-    # def get_player_state(self):
-    #     p = self.game.player
-    #     print(f"{p.y = }, {p.speed = }") 
-    #     return p.y, p.speed
 
 from reinforcement_learning.tile_coding import LinearQEncoder
 

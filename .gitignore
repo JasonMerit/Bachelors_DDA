@@ -8,6 +8,7 @@ export
 wandb
 models
 credentials.json
+screenshot.png
 
 # ignore all .pkl files
 deaths.pkl

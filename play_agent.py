@@ -4,7 +4,7 @@ from reinforcement_learning.agent import CheaterAgent
 
 class PlayAgent():
     def __init__(self, d):
-        self.env = EndlessRunnerEnv((d, 0), render=True, truncated=False)
+        self.env = EndlessRunnerEnv((d, 0), render=True, truncated=True)
 
         self.key_actions = {
             "quit": self.quit,
@@ -14,7 +14,8 @@ class PlayAgent():
             "decrease_speed": Controller.decrease_speed,
             "increase_difficulty": self.increase_difficulty,
             "decrease_difficulty": self.decrease_difficulty,           
-            "render": self.toggle_render
+            "render": self.toggle_render,
+            "screen_shot": self.env.game.screen_shot,
         }
 
         self.controller = Controller(self.key_actions)
@@ -65,17 +66,16 @@ class PlayAgent():
                 print(f"You died! With a score of {self.env.game.player.cleared_platforms}")
                 break
                 # obs, _ = self.env.reset()
-            if self.env.game.player.cleared_platforms > 1000:
+            if self.env.game.player.cleared_platforms > 10000:
                 print("You win!")
                 break
             if self.env.game.player.cleared_platforms == STOP:
                 self.env._render = True
 
-STOP = 119
+STOP = 0
+# STOP = 1262 - 2
 if __name__ == "__main__":
-    play_agent = PlayAgent(10)
+    play_agent = PlayAgent(4)
     if STOP:
         play_agent.toggle_render()
     play_agent.play()
-
-# 4

@@ -8,6 +8,8 @@ from scipy.interpolate import interpn, interp1d
 from model_config import checkpoint_folder, all_players, players
 # all_players = all_players[60:70]  # TODO: remove this line
 
+from icecream import ic
+
 discrete = np.arange(1, 11)
 continuous = np.linspace(1, 10, 100)
 
@@ -16,41 +18,52 @@ def interpolate(data, res=100):
     """Smoothe out the difficulty matrix using cubic interpolation."""
     smooth = np.linspace(1, 10, res)
     coords = np.array(np.meshgrid(smooth, smooth)).T.reshape(-1, 2)
+    # ic(data.shape, coords.shape)
     return interpn((discrete, discrete), data, coords, "cubic").reshape(res, -1)
-    
-# def _get_x(Y, target) -> np.ndarray:
-#     """Returns distinct x values that intersect with target."""
-#     f = interp1d(continuous, Y, kind='cubic')
-#     objective = lambda x: (f(x) - target)**2
-    
-#     solutions = set()
-#     for x0 in range(1, 11):
-#         x = minimize(objective, x0, bounds=[(1, 10)]).x[0]
-#         if np.isclose(f(x), target):
-#             solutions.add(np.round(float(x), 2))
 
-#     return np.array(sorted(list(solutions)))
-
+def get_y(Y, x_target):
+    f = interp1d(continuous, Y, kind='cubic')
+    return f(x_target)
+    # return np.interp(target, X, continuous)
+from scipy.stats import linregress 
 def get_x(Y, target):
     crossings = np.where(np.diff(np.sign(Y - target)))[0]
 
     # Interpolate 
     x_intersections = []
+    y_intersections = []
     for c in crossings:
         x0, x1 = continuous[c : c + 2]
         y0, y1 = Y[c : c + 2]
         x_intersections.append(x0 + (target - y0) * (x1 - x0) / (y1 - y0))
+        y_intersections.append(y0)  # TODO: use lerping instead of just y0
+    
+    if not x_intersections:
+        return -1
+    elif len(x_intersections) > 1:
+        slope, intercept, _, _, _ = linregress(x_intersections, y_intersections)
+        if slope > 0:
+            return -1
+        res = (target - intercept) / slope # Compute x value for target
+        return res
+    res = x_intersections[0]
+    return res
 
-    return np.array(x_intersections)
-
-def get_intersection_spread(Ys, target) -> float:
+def get_intersections(Ys, target) -> float:
     """Returns spread of x values intersecting with target.
     or 0 if no intersection is found.
     """
+    total = len(Ys)
     intersections = [get_x(Y, target) for Y in Ys]
     # filter out empty arrays and take mean
-    means = [a.mean() for a in intersections if a.size > 0]
-    return np.std(means) if means else 0
+    means = [a for a in intersections if a != -1 and 1 <= a <= 10]
+    # means = [a.mean() for a in intersections if a.size > 0]
+    if len(means) < 0.90*total:  # 90% of players
+        return []
+    
+    # TODO: Returning values not spreads!
+    return means
+    # return np.std(means) if means else 0
 
 def get_spreads(targets, performances):
     """Returns std of x values intersecting with target across all players.
@@ -58,16 +71,40 @@ def get_spreads(targets, performances):
     Zero when no intersection is found for any player or 
     very unlikely all players have the same intersection point."""
     
-    spreads = [(target, get_intersection_spread(performances, target)) for target in targets]
+    spreads = [(target, get_intersections(performances, target)) for target in targets]
     return [(m, s) for m, s in spreads if s > 0]
 
 def eval_line(datas, line, targets):
-    performances = [interpn((discrete, discrete), d, line, "cubic") for d in datas]
-    spreads = get_spreads(targets, performances)  # (t, std) pairs
-    if len(spreads) == 0:
-        return 0, 0, performances
-    best_target, max_std = max(spreads, key=lambda x: x[1])
-    return max_std, best_target, performances
+    X = np.linspace(line[0, 1], line[1, 1], 100)
+    Y = np.linspace(line[0, 0], line[1, 0], 100)
+    coords = np.column_stack((Y, X))
+    # ic(datas[0].shape, coords.shape)
+    performances = [interpn((discrete, discrete), d, coords, "cubic") for d in datas]
+    # quit()
+
+    # Get spread of intersections
+    # spreads = get_spreads(targets, performances)  # (t, std) pairs
+    target_intersects = [(target, get_intersections(performances, target)) for target in targets]
+    target_intersects = [(t, m) for t, m in target_intersects if len(m) > 0]
+    
+    if len(target_intersects) == 0:
+        return 0, 0, performances, []
+    
+    # target = [t for t, _ in target_intersects]
+    intersects = [m for _, m in target_intersects]
+
+    x_spreads = np.array([np.std(np.array(i) / 10) for i in intersects])
+    y_spreads = np.array([np.std([get_y(p, d) / 100 for p in performances]) for d in intersects])
+    product = x_spreads * y_spreads
+    
+    # Get the best
+    best = np.argmax(product)
+    max_std = product[best]
+    best_target, intersects = target_intersects[0]
+    # best_target, intersects = target_intersects[best]
+    # extract the means for the best target
+    max_std = np.prod(product)
+    return max_std, best_target, performances, intersects
 
 def wiggle(line, scale):
     start_point = line[0] + np.random.normal(0, scale, 2)
@@ -76,65 +113,29 @@ def wiggle(line, scale):
     end_point = line[-1] + np.random.normal(0, scale, 2)
     end_point = np.clip(end_point, 1, 10)
 
-    X = np.linspace(start_point[1], end_point[1], 100)
-    Y = np.linspace(start_point[0], end_point[0], 100)
-    return np.column_stack((Y, X))
+    return np.array([start_point, end_point])
 
-def plot_performace(performances):
-    plt.figure(figsize=(10, 5))
-    for performance in performances:
-        plt.plot(continuous, performance, color="r", alpha=0.1)
+def wiggle_tue(line, scale):
+# def wiggle_tue(line, scale):
+    line = np.vstack((line[0], line[1]))
+    mid_point = line.mean(axis=0) + np.random.normal(0, scale, 2)
+    # rotate line around mid_point
+    theta = scale * np.random.uniform(-.1, .1)
+    R = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+    line = line - mid_point
+    line = line @ R
+    line = line + mid_point
+    line = np.clip(line, 1, 10, out=line)
+    return line
 
-    plt.xlim(1, 10)
-    plt.xlabel('Difficulty')
-    plt.ylabel('Performance')
-    plt.title('Performance vs. Difficulty')
-    plt.legend()
-    plt.show()
-
-
-
-def plot_spreads(spreads, targets):
-    plt.figure(figsize=(4, 1))
-    plt.bar(*zip(*spreads))
-    plt.xticks(targets)
-    plt.xlabel('target performance')
-    plt.ylabel('Spread')
-    plt.title('Spread vs. target performance')
-    plt.show()
-
-def subplot_line(line, std, performances):
-    # Replicate plot_line, but gather the plots in a subplot
-    fig, axs = plt.subplots(1, 2, figsize=(10, 5))
-
-    ax = axs[0]
-    # ax.matshow(datas[-1], extent=(1, 10, 1, 10), origin='lower')
-    # ax.colorbar = plt.colorbar(ax.images[0], ax=ax, orientation='vertical')
-    ax.plot(line[:, 1], line[:, 0], color='r')
-    # write the coords of the line
-    ax.text(line[0, 1], line[0, 0], f"({line[0, 1]:.2f}, {line[0, 0]:.2f})", fontsize=8)
-    ax.text(line[-1, 1], line[-1, 0], f"({line[-1, 1]:.2f}, {line[-1, 0]:.2f})", fontsize=8)
-    ax.scatter(line[0, 1], line[0, 0], color='r')
-    ax.scatter(line[-1, 1], line[-1, 0], color='r')
-
-    ax.set_xlim(1, 10)
-    ax.set_ylim(1, 10)
-    ax.set_xlabel("P(death)")
-    ax.set_ylabel("\u0394gap")
-    ax.xaxis.set_ticks_position('bottom')
-    ax.set_xticks(range(1, 11))
-    ax.set_yticks(range(1, 11))
-    ax.set_title(f'{std = :.2f}')
-
-    ax = axs[1]
-    for p in performances:
-        ax.plot(continuous, p, color="r", alpha=0.1)
-    ax.set_xlim(1, 10)
-    ax.set_xlabel('Difficulty')
-    ax.set_ylabel('Performance')
-    ax.set_title('Performance vs. Difficulty')
-
-    plt.show()
+def wiggle_jason(line, scale):
+    # Same as wiggle_tue but only rotates end point
+    theta = scale * np.random.uniform(-.1, .1)
+    R = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+    end = line[-1] @ R
+    line = np.vstack((line[0], end))
+    line = np.clip(line, 1, 10, out=line)
+    return line
 
 def axis_setup(ax1, ax2):
     ax1.clear()
@@ -153,7 +154,7 @@ def axis_setup(ax1, ax2):
     ax2.set_ylabel('Performance')
     ax2.set_title('Performance vs. Difficulty')
 
-def plot_update(line, std, Z, target, performances, fig, ax1, ax2):
+def plot_update(line, std, Z, target, performances, intersects, fig, ax1, ax2):
     """Called to update the plot with new data."""
     # Clear and setup axes
     axis_setup(ax1, ax2)
@@ -162,40 +163,65 @@ def plot_update(line, std, Z, target, performances, fig, ax1, ax2):
     ax1.matshow(Z, extent=(1, 10, 1, 10), origin='lower')
     ax1.plot(line[:, 1], line[:, 0], color='r')
     ax1.text(line[0, 1], line[0, 0], f"({line[0, 1]:.2f}, {line[0, 0]:.2f})", fontsize=8)
-    ax1.text(line[-1, 1], line[-1, 0], f"({line[-1, 1]:.2f}, {line[-1, 0]:.2f})", fontsize=8)
+    ax1.text(line[1, 1], line[1, 0], f"({line[1, 1]:.2f}, {line[1, 0]:.2f})", fontsize=8)
     ax1.scatter(line[0, 1], line[0, 0], color='r')
-    ax1.scatter(line[-1, 1], line[-1, 0], color='r')
+    ax1.scatter(line[1, 1], line[1, 0], color='r')
     ax1.set_title(f'{std = :.2f}')
 
     # Axis 2 performance plot
     for p in performances:
         ax2.plot(continuous, p, color="r", alpha=0.1)
-    ax2.axhline(target, color='b', linestyle='--', label=f"target: {target:.2f}")
+    
+    # y intersects
+    # ax2.axhline(target, color='b', linestyle='--')
+    # ax2.scatter(intersects, [target] * len(intersects), color='g', label=f'{len(intersects)} intersects')
+    # plot std of intersects
+    # ax2.axhline(np.std(intersects), color='g', linestyle='--', label=f'std x = {np.mean(intersects):.2f}')
+    ax2.errorbar([np.mean(intersects)], [target], xerr=np.std(intersects), fmt='-', color='g', label=f'Mean x = {np.mean(intersects):.2f}')
+    
+    # x intersects
+    median_x = np.mean(intersects)
+    ys = [get_y(p, median_x) for p in performances]
+    # ax2.scatter([median_x] * len(ys), ys, color='g', label=f'Median x = {median_x:.2f}')
+    ax2.errorbar([median_x], [np.mean(ys)], yerr=np.std(ys), fmt='-', color='g', label=f'Mean y = {np.mean(ys):.2f}')
+    
+    # ax2.axvline(median_x, color='g', linestyle='--', label=f'Median x = {median_x:.2f}')
+    # get y-values for median x
+    # ic(performances.shape)
+    # median_y = []
+    # ax2.scatter([median_x] * len(median_y), median_y, color='g', label=f'Median y = {np.mean(median_y):.2f}')
+    
+    ax2.legend()
 
     # Draw and flush
     fig.canvas.draw()
     fig.canvas.flush_events()
+    
 
     plt.pause(0.01)
     
 def main():
-    datas = [np.load(f"{p}_means.npy") for p in all_players][3:]  # Remove worst 2 players
+    # datas = [np.load(f"{p}_means.npy") for p in all_players][3:]  # Remove worst 2 players
+    datas = np.load("population.npy").tolist()
+
+    # quit()
     Zs = np.array([interpolate(d) for d in datas])
     Z = Zs.mean(axis=0)
     # line = np.column_stack((np.full_like(continuous, 3), continuous)) 
-    line = np.column_stack((continuous, continuous))  # Slope 1 line
+    line = np.array([[1, 1], [10, 10]])
     # line = np.load("line.npy")
-    line_history = np.array(np.hstack([line[0], line[-1]]))
+    line_history = np.array(np.hstack([line[0], line[1]]))
+    # targets = [50]  # target performances
     targets = np.arange(10, 45, 5)  # target performances
 
     plt.ion()  # Enable interactive mode
 
     # Initial data
-    std, target, performances = eval_line(datas, line, targets)
+    std, target, performances, intersects = eval_line(datas, line, targets)
 
     # Plot initial data
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-    plot_update(line, std, Z, target, performances, fig, ax1, ax2)
+    plot_update(line, std, Z, target, performances, intersects, fig, ax1, ax2)
 
     def on_key(event):
         if event.key == 'q':
@@ -206,26 +232,28 @@ def main():
     scale = scale0
     fails = 0
     while True:
-        _line = wiggle(line, scale)
-        _std, target, performances = eval_line(datas, _line, targets)
+        # _line = wiggle(line, scale)
+        _line = wiggle_tue(line, scale)
+        # _line = wiggle_jason(line, scale)
+        _std, target, performances, intersects = eval_line(datas, _line, targets)
 
         if _std > std:
             line = _line
             std = _std
             # np.save("line.npy", line)
-            line_history = np.vstack((line_history, np.hstack([line[0], line[-1]])))
+            line_history = np.vstack((line_history, np.hstack([line[0], line[1]])))
             # np.save("line_history.npy", line_history)
-            plot_update(_line, _std, Z, target, performances, fig, ax1, ax2)
+            plot_update(_line, _std, Z, target, performances, intersects, fig, ax1, ax2)
 
             fails = 0
             scale = scale0
         else:
+            plot_update(line, std, Z, target, performances, intersects, fig, ax1, ax2)
             fails += 1
             if fails > 5:
                 scale += scale0
-                if scale > 1:
-                    scale = scale0
-                    continue
+                if scale > 5:
+                    scale = scale0                    
     
     
 def wiggle_demo():

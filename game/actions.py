@@ -13,4 +13,5 @@ key_actions = {
     "increase_difficulty": (pg.KEYDOWN, [pg.K_e]),
     "decrease_difficulty": (pg.KEYDOWN, [pg.K_q]),
     "render":           (pg.KEYDOWN, [pg.K_v]),
+    "screen_shot":      (pg.KEYDOWN, [pg.K_b]),
 }

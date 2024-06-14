@@ -7,7 +7,6 @@ class CheaterAgent():
     from game.entities import Platform
     from game.player import Player
 
-    player_left = Player.init_pos[0] - Player.size
 
     speed = Platform.scroll_speed
     jump_speed = Player.jump_speed
@@ -15,6 +14,7 @@ class CheaterAgent():
     jump_times = Player.jump_times
     max_hold_frames = Player.max_hold_frames
     gravity = Player.gravity   
+    size = Player.size
     
     peak = jump_speed ** 2 / (2 * gravity)
     jump_height = jump_speed * max_hold_frames + peak
@@ -24,12 +24,11 @@ class CheaterAgent():
         self.verbose = verbose
 
     def predict(self, obs, state=None, episode_start=None, deterministic=True):
-        # return [0], None
-        
-        # x1 = obs[0][0]
-        # action = int(x1 < 17) * 2
-        # return [action], None
         x1, dx, dy = obs[0]
+        # return [0], None
+        # return [1], None
+        # action = int(x1 < 50) * 3 
+        # return [action], None
         
         # ic(x1)
         # return 1 if lower than 18
@@ -44,7 +43,7 @@ class CheaterAgent():
         #     return [3], None
         # return [0], None
         if dy < 0: # Wait until end of platform and fall
-            t_wait = x1 / self.speed
+            t_wait = (x1 + self.size) / self.speed
             t_fall = sqrt(-2 * dy / self.gravity)
 
             if t_fall + t_wait > t_travel:

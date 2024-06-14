@@ -14,9 +14,6 @@ def blit_rotate(surf, image, topleft, angle):
     new_rect = rotated_image.get_rect(center = image.get_rect(topleft = topleft).center)
     surf.blit(rotated_image, new_rect.topleft)
 
-# def random_color():
-#     return (random.randint(100, 150), random.randint(100, 150), random.randint(100, 150))    
-
 def lerp_color(color1, color2, t):
     return Color([x + (y-x) * t for x, y in zip(Color(color1), Color(color2))])
 
@@ -36,35 +33,32 @@ class RectSprite(Sprite):
         self.outline_surface = self.surface.copy()
         pg.draw.rect(self.outline_surface, Config.RED, self.surface.get_rect(), 2, 10)
 
-        
-
     def update(self, screen : Surface, debug: bool):
         screen.blit(self.surface, (self.x, self.draw_top))
     
-
-
 class FlatSprite(Flat, RectSprite):
     def __init__(self, topleft, width, color):
         super().__init__(topleft, width)
         rounding = 10
 
         height = Config.height
-        self.surface = pg.Surface((width, height))
-        rect = self.surface.get_rect()
-        pg.draw.rect(self.surface, color, rect)
-
-        # height = 100
         # self.surface = pg.Surface((width, height))
         # rect = self.surface.get_rect()
-        # pg.draw.rect(self.surface, color, rect, border_radius=rounding)
-        # shade_color = lerp_color(color, Config.BLACK, 0.4)
-        # pg.draw.rect(self.surface, shade_color, rect, 15, rounding)
+        # pg.draw.rect(self.surface, color, rect)
+
+        # height = 100
+        self.surface = pg.Surface((width, height))
+        rect = self.surface.get_rect()
+        pg.draw.rect(self.surface, color, rect, border_radius=rounding)
+        shade_color = lerp_color(color, Config.BLACK, 0.4)
+        pg.draw.rect(self.surface, shade_color, rect, 15, rounding)
 
         self.draw_top = Config.height - self.top
 
         RectSprite.__init__(self)
     
     def outline(self, invert=False):
+        return
         if invert:
             self.surface = self.outline_surface
         else:

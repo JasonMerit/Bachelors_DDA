@@ -97,15 +97,16 @@ if __name__ == "__main__":
         last = lines[-1].split(", ")
         path = last[0] + ".zip"
     
-    model = "_100000_steps"
-    path = f"{checkpoint_folder}/{model}"
+    # model = "_100000_steps"
+    # path = f"{checkpoint_folder}/{model}"
     # path = "models/05_05/PPO_22_17/_90600000_steps.zip"
-    path = "models/05_05/PPO_22_17/_44100000_steps.zip"
-    path = "models/05_08/PPO_12_50.zip"
-    path = "models/05_12/PPO_14_26/_10000000_steps.zip"  # PERCFECT
+    # path = "models/05_05/PPO_22_17/_44100000_steps.zip"
+    # path = "models/05_08/PPO_12_50.zip"
+    # path = "models/05_12/PPO_14_26/_10000000_steps.zip"  # PERCFECT
     # path = "models/04_18/PPO_00_05/_7000000_steps.zip"
+    path = 'models/06_04/PPO_19_55/_4000000_steps.zip'
     print(f"Playing [{path}] in [{Env.__name__}]")
 
-    play_model = PlayModel(path, Env, (6, 0))
+    play_model = PlayModel(path, Env, (5, 0))
     play_model.play()
     

@@ -36,7 +36,7 @@ class Platform(ABC):
         pass
     
     def outline(self, invert=False):
-        raise NotImplementedError
+        pass # Debugging
 
     def __repr__(self):
         return f"Platform: {self.id}, {self.topleft}, {self.width}"

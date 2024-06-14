@@ -71,3 +71,19 @@ models/05_08/PPO_13_17, Binary repeat (beginning poor performance (dummyenv), 1.
 models/05_08/PPO_16_31, Binary (obs = x1), 1.0e6, 1225.91, 1002
 models/05_12/PPO_14_26, (PERFECT) Scalar obs (Longer), 1.0e7, 11103.67, 1002
 models/05_13/PPO_21_29, Obstacles (two obs x1 + dist_obstacle), 1.0e7, 11195.53, 31
+models/05_29/PPO_16_16, Full env (Oops same GM seed), 1.0e7, 10976.02, 31
+models/05_29/PPO_23_41, Full env, 1.0e8, 103189.29, 31
+models/06_02/PPO_16_35, Full env (less time), 1.0e7, 12155.64, 314
+models/06_03/PPO_02_44, Full env (less time v2), 1.0e7, 9695.55, 681
+models/06_03/PPO_10_00, Full env (less time v3), 1.0e7, 12370.06, 764
+models/06_03/PPO_19_28, Full env (less time v4), 1.0e7, 11151.24, 237
+models/06_04/PPO_12_52, Singular obs / action / Random offset, 1.0e7, 10224.08, 20422
+models/06_04/PPO_15_52, Singular obs / action / Random offset, 1.0e7, 10671.91, 70359
+models/06_04/PPO_19_55, Singular obs / action, 1.0e7, 9682.59, 28361
+models/06_04/PPO_23_03, Singular obs / action, 1.0e7, 10026.73, 32504
+models/06_05/PPO_02_17, Singular obs / action, 1.0e7, 9985.62, 45476
+models/06_05/PPO_05_31, Singular obs / action, 1.0e7, 10861.64, 28181
+models/06_05/PPO_08_59, Singular obs / action, 1.0e7, 10721.78, 74939
+models/06_05/PPO_12_25, Singular obs / action, 1.0e7, 10830.83, 98697
+models/06_05/PPO_15_54, Singular obs / action, 1.0e7, 9769.04, 41734
+models/06_08/PPO_13_50, Full env (less time v5), 1.0e7, 11526.47, 63874

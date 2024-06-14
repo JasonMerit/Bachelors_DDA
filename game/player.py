@@ -178,7 +178,7 @@ class Player():
 
         # Score tick
         if platform and self.current_platform != platform:
-            ic("__________")
+            # ic("__________")
             self.cleared_platforms += 1
         self.current_platform = platform
     

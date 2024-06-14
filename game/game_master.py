@@ -25,12 +25,14 @@ class GameMaster():
     jump_height = jump_speed * max_hold_frames + jump_speed ** 2 / (2 * gravity)
 
 
-    def __init__(self):
-        random.seed(39)
+    # def __init__(self):
+    #     random.seed(39)
     
-    def set_difficulty(self, difficulty: Tuple[float, float]):
-        self.gap_multiplier, self.death_prob = sqrt(difficulty[0] / 10), difficulty[1] / 50
-        # print("GM Difficulty:", difficulty)
+    def set_difficulty(self, difficulty: Tuple[int, int]):
+        assert 0 <= difficulty[0] <= 10, "Difficulty must be between 0 and 10"
+        self.gap_multiplier = sqrt(difficulty[0] / 10)
+        self.death_prob = difficulty[1] ** 0.5 / 100
+        # self.death_prob = difficulty[1] / 50
 
     def clamp(self, y):
         return min(max(int(y), self.min_height), self.max_height)
@@ -68,9 +70,8 @@ class GameMaster():
         y_new = y + self.gap_multiplier * dy
 
         T = self._fly_time(y, y_new)
-        dx = T * self.speed  #(0.5, 0.6)
-        dx = random.randrange(int(dx * 0), int(dx))  # Randomize distance
-        # dx = random.randrange(self.min_gap, int(dx))  # Randomize distance
-        x_new = x + int(self.gap_multiplier * dx)  # TODO Test 45 min dist
+        dx = T * self.speed  #(0.3, 0.6)
+        dx = random.randrange(int(dx / 4), int(dx))  # Randomize distance
+        x_new = x + int(self.gap_multiplier * dx)
         # print(int(y_new))
         return x_new, int(y_new)

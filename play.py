@@ -16,7 +16,8 @@ class EndlessRunnerApp():
             "increase_speed": Controller.increase_speed,
             "decrease_speed": Controller.decrease_speed,
             "increase_difficulty": self.increase_difficulty,
-            "decrease_difficulty": self.decrease_difficulty
+            "decrease_difficulty": self.decrease_difficulty,
+            "screen_shot": self.game.screen_shot,
         }
 
         self.controller = Controller(self.key_actions)
@@ -62,5 +63,5 @@ class EndlessRunnerApp():
 
 
 if __name__ == "__main__":
-    app = EndlessRunnerApp(6)
+    app = EndlessRunnerApp(10)
     app.play()
